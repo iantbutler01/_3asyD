@@ -1,0 +1,55 @@
+<html>
+<head>
+<script src='jquery-2.1.4.min.js'></script>
+<script type='text/javascript' src="_3asyD.js"></script>
+<script type='text/javascript' id='glCode'>
+	window.onload = function() {
+		_3asyD.setGL("#canvas");
+		var gl = _3asyD.getGL();
+		_3asyD.createFromExternalScripts('pentaShader.vertex','pentaShader.fragment',"programOne", function(){
+		_3asyD.setProgram("programOne");
+		_3asyD.loadUniforms(["pMatrix","vMatrix","mMatrix"]);
+		_3asyD.loadAttributes(["color","position","normal"]);
+		_3asyD.setPerspectiveProj(40,($('#canvas').width()/$('#canvas').height()),1,100);
+		_3asyD.setLightDirection
+		_3asyD.setLight("SOURCE_AMBIENT","#FFB2B2");
+		_3asyD.setLight("SOURCE_DIFFUSE","#FFB2B2");
+		_3asyD.setLight("SOURCE_SPECULAR","#FFB2B2");
+		_3asyD.setLight("MATERIAL_AMBIENT","#FFB2B2");
+		_3asyD.setLight("MATERIAL_DIFFUSE","#FFB2B2");
+		_3asyD.setLight("MATERIAL_DIFFUSE","#FFB2B2");
+	//-------------Shapes
+
+		var Cube = new _3asyD.Cube(2,2,2);
+		_3asyD.bufferSetUp(Cube);
+		_3asyD.translateX(Cube.MMATRIX,-4);
+		var Sphere = new _3asyD.Sphere(1.5,1.5,1.5,100,200);
+		Sphere.DRAWTYPE = gl.TRIANGLES;
+		_3asyD.bufferSetUp(Sphere);
+		_3asyD.translateZ(_3asyD.VMATRIX,6);
+
+	//-------------Draw
+		gl.enable(gl.DEPTH_TEST);
+		gl.depthFunc(gl.LEQUAL);
+		gl.clearColor(0.0,0.0,0.0,0.0);
+		gl.clearDepth(1.0);
+		var time_old = 0;
+		function animate(time){
+			var dt = time-time_old;
+			_3asyD.rotateY(Sphere.MMATRIX,dt*.001);
+			_3asyD.rotateX(Cube.MMATRIX,dt*.001);
+			time_old=time;
+			gl.viewport(0.0,0.0,$('#canvas').width(),$('#canvas').height());
+			_3asyD.drawElements([Sphere,Cube]);
+			window.requestAnimationFrame(animate);
+		};
+		animate(0);		
+		});
+		
+	};
+</script>
+</head>
+<body>
+	<canvas id="canvas" height='1000' width='1000' style='background-color:green;'></canvas>
+</body>
+</html>

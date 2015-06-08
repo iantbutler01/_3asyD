@@ -1,0 +1,17 @@
+attribute vec3 position;
+uniform mat4 pMatrix;
+uniform mat4 vMatrix;
+uniform mat4 mMatrix;
+attribute vec3 color;
+attribute vec3 normal;
+varying vec3 vNorm;
+varying vec3 vColor;
+varying vec3 vView;
+
+
+void main(void) {
+	vNorm = vec3(mMatrix*vec4(normal,0));
+	gl_Position = pMatrix*vMatrix*mMatrix*vec4(position,1.0);
+	vView = vec3(vMatrix*mMatrix*vec4(position,1));
+	vColor = color;
+}
