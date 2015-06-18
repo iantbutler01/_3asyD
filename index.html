@@ -6,13 +6,13 @@
 	window.onload = function() {
 		_3asyD.setGL("#canvas");
 		var gl = _3asyD.getGL();
-		_3asyD.createFromExternalScripts('pentaShader.vertex','pentaShader.fragment',"programOne", function(){
+		_3asyD.createProgramFromInternal("programOne","flat");
 		_3asyD.setProgram("programOne");
 		_3asyD.loadUniforms(["pMatrix","vMatrix","mMatrix"]);
 		_3asyD.loadAttributes(["color","position","normal"]);
 		_3asyD.setPerspectiveProj(40,($('#canvas').width()/$('#canvas').height()),1,100);
 		_3asyD.setLightDirection([-0.4,-0.4,1.0]);
-		_3asyD.setLight("SOURCE_AMBIENT","#FFB2FF");
+		_3asyD.setLight("SOURCE_AMBIENT","#FFAAFF");
 		_3asyD.setLight("SOURCE_DIFFUSE","#FF5555");
 		_3asyD.setLight("SOURCE_SPECULAR","#111111");
 		_3asyD.setLight("MATERIAL_AMBIENT","#FFB2FF");
@@ -56,7 +56,7 @@
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 			var dt = time-time_old;
 			for(var i = 0; i < FunTime.length; ++i) {
-				_3asyD.rotateX(FunTime[i].MMATRIX,dt*.01);
+				_3asyD.rotateX(FunTime[i].MMATRIX,dt*.1);
 				_3asyD.rotateY(FunTime[i].MMATRIX,dt*.001);
 				var p = Math.random() < 0.5 ? -1 : 1;
 				_3asyD.translateXYZ(FunTime[i].MMATRIX,p*dt*.001,p*dt*.001,p*dt*.001);
@@ -71,9 +71,7 @@
 			
 			window.requestAnimationFrame(animate);
 		};
-		animate(0);		
-		});
-		
+		animate(0);			
 	};
 </script>
 </head>

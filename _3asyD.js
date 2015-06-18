@@ -1,5 +1,5 @@
 var PI = Math.PI;
-var _3asyD = {
+_3asyD = {
 	gl: null,
 	programs: [],
 	currentProgram: null,
@@ -165,6 +165,30 @@ var _3asyD = {
 			_3asyD.programs[programName]=SHADER_PROGRAM;
 			callback();
 		});
+	},
+	createProgramFromInteral(programName,typeString) {
+		var GL = this.gl;
+		var SHADER_PROGRAM=null;
+		var vertexShade = GL.createShader(GL.VERTEX_SHADER);
+		var fragShade = GL.createShader(GL.FRAGMENT_SHADER);
+		var material = new _3asyD.shaders[typeString];
+		GL.shaderSource(vertexShade,material.vertex.sourceCode);
+		GL.compileShader(vertexShade);
+		if(!GL.getShaderParameter(vertexShade,GL.COMPILE_STATUS)) {
+			console.error("Vertex Shader Failed to Compile.\n"+GL.getShaderInfoLog(vertexShade)+"\n");
+			return false;
+		}
+		GL.shaderSource(fragShade,material.fragment.sourceCode);
+		GL.compileShader(fragShade);
+		if(!GL.getShaderParameter(fragShade,GL.COMPILE_STATUS)) {
+			console.error("Fragment Shader Failed to Compile.\n"+GL.getShaderInfoLog(fragShade)+"\n");
+			return false;
+		}
+		SHADER_PROGRAM = GL.createProgram();
+		GL.attachShader(SHADER_PROGRAM,vertexShade);
+		GL.attachShader(SHADER_PROGRAM,fragShade);
+		GL.linkProgram(SHADER_PROGRAM);
+		_3asyD.programs[programName]=SHADER_PROGRAM;
 	},
 
 	setProgram: function(name) {
