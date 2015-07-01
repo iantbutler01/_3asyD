@@ -1,22 +1,27 @@
 var PI = Math.PI;
-var _3asyD = {
+_3asyD = {
 	gl: null,
 	programs: [],
 	currentProgram: null,
-	VMATRIX: _3asyD.getI4(),
 	UNIFORMS: [],
-	PMATRIX: _3asyD.getPerspectiveProj(40,($('#canvas').width()/$('#canvas').height()),1,100),
 	ATTRIBUTES: [],
+	PMATRIX: null,
+	VMATRIX: [
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		0,0,0,1
+		],
 
 	dtor: function(deg) {
 		return (deg*Math.PI/180);
 	},
 
-	getPerspectiveProj: function(angle, a, zMax, zMin) {
+	setPerspectiveProj: function(angle, a, zMax, zMin) {
 		var tan = Math.tan(_3asyD.dtor(0.5*angle));
 		var A = -(zMax+zMin)/(zMax-zMin);
 		var B = (-2*zMax*zMin)/(zMax-zMin)
-		return [
+		this.PMATRIX = [
 		(0.5/tan),0,0,0,
 		0,(0.5*a/tan),0,0,
 		0,0,A,B,
@@ -33,7 +38,7 @@ var _3asyD = {
 		]
 	},
 
-	rotateX: function(m, angle) {
+	rotateY: function(m, angle) {
 		var c=Math.cos(angle);
 		var s=Math.sin(angle);
 		var mv1=m[1], mv5=m[5], mv9=m[9];
@@ -46,7 +51,7 @@ var _3asyD = {
 		m[10]=m[10]*c+mv9*s;
 	},
 
-	rotateY: function(m, angle) {
+	rotateX: function(m, angle) {
 		var c=Math.cos(angle);
 		var s=Math.sin(angle);
 		var mv0=m[0], mv4=m[4], mv8=m[8];
@@ -97,14 +102,28 @@ var _3asyD = {
 		}
 	},
 
+	vectorByScalar: function(vector,scalar) {
+		if(vector.length < 2) console.warn("Built in multiplication should be used.");
+		for(var i =  0; i < vector.length; ++i) {
+			vector[i] *= scalar;
+		}
+		return vector;
+	},
 
-	translateZ: function(m, t){
-		m[14]+=t;
+
+	translateXYZ: function(moveMatrix, x,y,z){
+		moveMatrix[12]+=x;
+
+		moveMatrix[13]+=y;
+
+		moveMatrix[14]+=z;
 	},
 
 	setGL: function(id) {
 		try {
 			this.gl = $(id)[0].getContext('experimental-webgl');
+			this.VMATRIX = this.getI4();
+
 		}
 		catch(err) {
 			console.error(err);
@@ -147,56 +166,74 @@ var _3asyD = {
 			callback();
 		});
 	},
+	
 
 	setProgram: function(name) {
 		try {
-			this.GL.useProgram(this.programs[name]);
+			this.gl.useProgram(this.programs[name]);
 			this.currentProgram = this.programs[name];
 		}
 		catch(err) {
 			console.error(err);
 		}
 	},
+	
+	hexToGLRGB: function(hexValue) {
+		console.log(hexValue.length);
+		var newHexValue = "";
+		if(hexValue.length == 4) {
+			newHexValue = hexValue.charAt(1)+hexValue.charAt(1)+hexValue.charAt(2)+hexValue.charAt(2)+hexValue.charAt(3)+hexValue.charAt(3);
+		}
+		else newHexValue = hexValue.charAt(1)+hexValue.charAt(2)+hexValue.charAt(3)+hexValue.charAt(4)+hexValue.charAt(5)+hexValue.charAt(6);
+		var r = parseInt(newHexValue.charAt(0)+newHexValue.charAt(1),16);
+		var g = parseInt(newHexValue.charAt(2)+newHexValue.charAt(3),16);
+		var b = parseInt(newHexValue.charAt(4)+newHexValue.charAt(5),16);
+		console.log(r/255,g/255,b/255);
+		return [r/255,g/255,b/255];
+	},
 
 	loadUniforms: function(uniformNamesArray) {
 		var GL = this.gl;
 		var currentProgram = this.currentProgram;
-		for(i = 0; i < uniformNamesArray.length; ++i) {
+		var uniforms = {};
+		for(var i =  0; i < uniformNamesArray.length; ++i) {
 			uniforms[uniformNamesArray[i]] = (GL.getUniformLocation(currentProgram,uniformNamesArray[i]));
 		}
-		for(i = 0; i < shapeList.length; ++i) {
-			this.UNIFORMS = uniforms;
-		}
+		this.UNIFORMS = uniforms;
 	},
 
-	setLighting: function(lightInfoObject) {
+	setLightDirection: function(directionVector) {
 		var GL = this.gl;
-		var currentProgram = this.currentProgram;
-		var propertyName = lightInfoObject.keys();
-		for(i = 0; i < propertyName.length; ++i) {
-			GL.uniform3fv(GL.getUniformLocation(currentProgram,propertyName[i]),lightInfoObject[i]);
-		}
+		var currentProgram = _3asyD.currentProgram;
+		GL.uniform3fv(GL.getUniformLocation(currentProgram,"SOURCE_DIRECTION"),new Float32Array(this.vectorByScalar(directionVector,-1)));
+	},
+
+	setLight: function(typeString,color,gloss) {
+		var GL = this.gl;
+		var currentProgram = _3asyD.currentProgram;
+		GL.uniform3fv(GL.getUniformLocation(currentProgram,typeString),new Float32Array(this.hexToGLRGB(color)));
+		if(gloss) GL.uniform1f(GL.getUniformLocation(currentProgram,"GLOSS"),gloss);
 
 	},
 	bufferSetUp: function(shape) {
 		var GL = this.gl;
 		shape.VERTEX_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ARRAY_BUFFER,this.VERTEX_BUFFER);
+		GL.bindBuffer(GL.ARRAY_BUFFER,shape.VERTEX_BUFFER);
 		GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(shape.VERTICIES),GL.STATIC_DRAW);
 		shape.FACE_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,this.FACE_BUFFER);
+		GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,shape.FACE_BUFFER);
 		GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,new Uint16Array(shape.FACES),GL.STATIC_DRAW);
 		shape.NORMAL_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ARRAY_BUFFER,this.NORMAL_BUFFER);
+		GL.bindBuffer(GL.ARRAY_BUFFER,shape.NORMAL_BUFFER);
 		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(shape.NORMALS),GL.STATIC_DRAW);
 		shape.COLOR_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ARRAY_BUFFER,this.COLOR_BUFFER);
+		GL.bindBuffer(GL.ARRAY_BUFFER,shape.COLOR_BUFFER);
 		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(shape.COLOR),GL.STATIC_DRAW);
 	},
-	setDrawType: function(shape,typeString) {
+	setDrawType: function(shape,typeString) { //FIX
 		try {
 			var GL = this.gl;
-			shape.DRAWTYPE = gl[typeString];
+			shape.DRAWTYPE = GL[typeString];
 		}
 		catch(err) {
 			console.error(err);
@@ -207,10 +244,13 @@ var _3asyD = {
 	loadAttributes: function(attributeNameArray) {
 		var GL = this.gl;
 		var currentProgram = this.currentProgram;
-		for(i = 0; i < attributeNameArray.length; ++i) {
+		for(var i =  0; i < attributeNameArray.length; ++i) {
+			console.log(attributeNameArray[i]);
 			this.ATTRIBUTES[attributeNameArray[i]] = GL.getAttribLocation(currentProgram,attributeNameArray[i]);
+			console.log(this.ATTRIBUTES[attributeNameArray[i]]);
 			GL.enableVertexAttribArray(this.ATTRIBUTES[attributeNameArray[i]]);
 		}
+
 		
 	},
 
@@ -218,17 +258,16 @@ var _3asyD = {
 		var GL = this.gl;
 		var attributes = this.ATTRIBUTES;
 		try {
-			GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
 			GL.uniformMatrix4fv(this.UNIFORMS["pMatrix"],false,this.PMATRIX);
 			GL.uniformMatrix4fv(this.UNIFORMS["vMatrix"],false,this.VMATRIX);
-			for(i = 0; i < shapeList.length; ++i) {
+			for(var i =  0; i < shapeList.length; ++i) {
 				GL.uniformMatrix4fv(this.UNIFORMS["mMatrix"],false,shapeList[i].MMATRIX);
 				GL.bindBuffer(GL.ARRAY_BUFFER,shapeList[i].VERTEX_BUFFER);
+				GL.vertexAttribPointer(attributes["position"],3,GL.FLOAT,false,0,0);
 				GL.bindBuffer(GL.ARRAY_BUFFER,shapeList[i].COLOR_BUFFER);
+				GL.vertexAttribPointer(attributes["color"],3,GL.FLOAT,false,0,0);
 				GL.bindBuffer(GL.ARRAY_BUFFER,shapeList[i].NORMAL_BUFFER);
-				for(j = 0; j < attributes.length; ++j) {
-					GL.vertexAttribPointer(attributes[j],3,GL.FLOAT,false,4*3,0);
-				}
+				GL.vertexAttribPointer(attributes["normal"],3,GL.FLOAT,false,0,0);
 				GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,shapeList[i].FACE_BUFFER);
 				GL.drawElements(shapeList[i].DRAWTYPE,shapeList[i].INDICIES,GL.UNSIGNED_SHORT,0);
 			}
@@ -240,46 +279,50 @@ var _3asyD = {
 		}
 	},
 
+	
+
 	Cube: function Cube(length,width,height) {
 		var l = length/2;
 		var w = width/2;
 		var h = height/2;
+		this.CHILDREN = [];
 		this.INDICIES = 36;
+		this.MATERIAL = "FLAT";
 		this.LENGTH = length;
 		this.WIDTH = width;
 		this.HEIGHT = height;
-		this.MMATRIX = this.getI4();
+		this.MMATRIX = _3asyD.getI4();
 		this.DRAWTYPE = _3asyD.gl.TRIANGLES;
-		this.VERTICIES = [    //Eventually take out the colors from this.
-			-1*l,-1*w,-1*h,     1,1,0,
-			1*l,-1*w,-1*h,     1,1,0,
-			1*l, 1*w,-1*h,     1,1,0,
-			-1*l, 1*w,-1*h,     1,1,0,
+		this.VERTICIES = [  
+			-1*l,-1*w,-1*h,   
+			1*l,-1*w,-1*h,     
+			1*l, 1*w,-1*h,     
+			-1*l, 1*w,-1*h,     
 
-			-1*l,-1*w, 1*h,     0,0,1,
-			1*l,-1*w, 1*h,     0,0,1,
-			1*l, 1*w, 1*h,     0,0,1,
-			-1*l, 1*w, 1*h,     0,0,1,
+			-1*l,-1*w, 1*h,    
+			1*l,-1*w, 1*h,    
+			1*l, 1*w, 1*h,     
+			-1*l, 1*w, 1*h,     
 
-			-1*l,-1*w,-1*h,     0,1,1,
-			-1*l, 1*w,-1*h,     0,1,1,
-			-1*l, 1*w, 1*h,     0,1,1,//ll
-			-1*l,-1*w, 1*h,     0,1,1,
+			-1*l,-1*w,-1*h,     
+			-1*l, 1*w,-1*h,     
+			-1*l, 1*w, 1*h,    
+			-1*l,-1*w, 1*h,    
 
-			1*l,-1*w,-1*h,     1,0,0,
-			1*l, 1*w,-1*h,     1,0,0,
-			1*l, 1*w, 1*h,     1,0,0,//kk
-			1*l,-1*w, 1*h,     1,0,0,
+			1*l,-1*w,-1*h,     
+			1*l, 1*w,-1*h,     
+			1*l, 1*w, 1*h,     
+			1*l,-1*w, 1*h,     
 
-			-1*l,-1*w,-1*h,     1,0,1,
-			-1*l,-1*w, 1*h,     1,0,1,
-			1*l,-1*w, 1*h,     1,0,1, //jj
-			1*l,-1*w,-1*h,     1,0,1,
+			-1*l,-1*w,-1*h,     
+			-1*l,-1*w, 1*h,     
+			1*l,-1*w, 1*h,    
+			1*l,-1*w,-1*h,     
 
-			-1*l, 1*w,-1*h,     0,1,0,
-			-1*l, 1*w, 1*h,     0,1,0,
-			1*l, 1*w, 1*h,     0,1,0, //oo
-			1*l, 1*w,-1*h,     0,1,0
+			-1*l, 1*w,-1*h,   
+			-1*l, 1*w, 1*h,    
+			1*l, 1*w, 1*h,    
+			1*l, 1*w,-1*h,    
 	    ];
 
 		this.FACES = [    
@@ -303,78 +346,40 @@ var _3asyD = {
 	    ];
 		
 		this.NORMALS = [
+		//BOTTOM
+		0,0,-1,
+		0,0,-1,
+		0,0,-1,
+		0,0,-1,
+		//TOP
+		0,0,1,
+		0,0,1,
+		0,0,1,
+		0,0,1,
+		//BACK
+		-1,0,0,
+		-1,0,0,
+		-1,0,0,
+		-1,0,0,
+		//FRONT
+		1,0,0,
+		1,0,0,
+		1,0,0,
+		1,0,0,
+		//LEFT
+		0,-1,0,
+		0,-1,0,
+		0,-1,0,
+		0,-1,0,
+		//RIGHT		
+		0,1,0,
+		0,1,0,
+		0,1,0,
+		0,1,0
 		];
-		var crossProduct = this.crossProduct;
-		for(i = 1; i <= 24; ++i) {
-			if(i <= 2) {
-				this.NORMALS.concat(crossProduct([-1*l,-1*w,-1*h],[1*l,-1*w,-1*h]));
-			}
-			if(i>2 && i<=4) {
-				this.NORMALS.concat(crossProduct([1*l,1*w,-1*h],[-1*l,1*w,-1*h]));
-			}
-			if(i>4 && i<=6) {
-				this.NORMALS.concat(crossProduct([-1*l,-1*w,1*h],[1*l,-1*w,1*h]));
-			}
-			if(i>6 && i<=8) {
-				this.NORMALS.concat(crossProduct([1*l,1*w,1*h],[-1*l,1*w,1*h]));
-			}
-			if(i>8 && i<=10) {
-				this.NORMALS.concat(crossProduct([-1*l,-1*w,-1*h],[-1*l,1*w,-1*h]));
-			}
-			if(i>10 && i<=12) {
-				this.NORMALS.concat(crossProduct([-1*l,1*w,1*h],[-1*l,-1*w,1*h]));
-			}
-			if(i>12 && i<=14) {	
-				this.NORMALS.concat(crossProduct([1*l,-1*w,-1*h],[1*l,1*w,-1*h]));
-			}
-			if(i>14 && i<=16) {
-				this.NORMALS.concat(crossProduct([1*l,1*w,1*h],[1*l,-1*w,1*h]));
-			}
-			if(i>16 && i<=18) {
-				this.NORMALS.concat(crossProduct([-1*l,-1*w,-1*h],[-1*l,-1*w,1*h]));
-			}
-			if(i>18 && i<=20) {
-				this.NORMALS.concat(crossProduct([1*l,-1*w,1*h],[1*l,-1*w,-1*h]));
-			}
-			if(i>20 && i<=22) {
-				this.NORMALS.concat(crossProduct([-1*l,1*w,-1*h],[-1*l,1*w,1*h]));
-			}
-			if(i>22 && i<=24) {
-				this.NORMALS.concat(crossProduct([1*l,1*w,1*h],[1*l,1*w,-1*h]));
-			}
-		}
-		this.COLOR = [
-	        1,1,0,
-	     	1,1,0,
-		    1,1,0,
-		    1,1,0,
 
-		    0,0,1,
-		    0,0,1,
-		    0,0,1,
-		    0,0,1,
-
-		    0,1,1,
-		    0,1,1,
-			0,1,1,
-		    0,1,1,
-
-			1,0,0,
-		    1,0,0,
-		    1,0,0,
-		    1,0,0,
-
-		    1,0,1,
-		    1,0,1,
-		    1,0,1, 
-		    1,0,1,
-
-		    0,1,0,
-    		0,1,0,
-		    0,1,0, 
-		    0,1,0
-
-		]
+		this.COLOR = []
+		this.prototype.constructor = this;
 	},
 
 	Sphere: function Sphere(radiusX,radiusY,radiusZ,smoothX,smoothY) {
@@ -386,27 +391,25 @@ var _3asyD = {
 		var pZ = radiusZ;
 		var sX = smoothX;
 		var sY = smoothY;
+		this.CHILDREN = [];
 		this.VERTICIES = [];
 		this.NORMALS = [];
 		this.COLOR = [];
+		this.MATERIAL = "FLAT";
 		this.MMATRIX = _3asyD.getI4();
 		this.INDICIES = smoothX*smoothY*6;
 		this.DRAWTYPE = _3asyD.gl.TRIANGLES;
-		for(i = 0; i <= PI; i+=(PI/sY)) {
+		for(var i =  0; i <= PI; i+=(PI/sY)) {
 			for(j = 0; j <= 2*PI; j+=((2*PI)/sX)) {
 				var x = Math.sin(i)*Math.cos(j);
 				var y = Math.sin(i)*Math.sin(j);
 				var z = Math.cos(i);
-				if(j<=PI) {
-					this.COLOR.push(0.5,0.2,0.9);
-				}
-				else this.COLOR.push(0.2,0.4,0.7);
 				this.NORMALS.push(x,y,z);
 				this.VERTICIES.push(pX*x,pY*y,pZ*z);
 			}
 		}
 		this.FACES = [];
-		for(i = 0; i < smoothY; ++i) {
+		for(var i =  0; i < smoothY; ++i) {
 			for(j = 0; j < smoothX; ++j) {
 				var one = (i*(smoothX+1))+j;
 				var two = one+smoothX+1;
@@ -420,4 +423,6 @@ var _3asyD = {
 	Cone: function Cone() {
 
 	}
+
+
 };

@@ -1,6 +1,6 @@
 //Move to json architecture.
 
-_3asyD.shaders = {
+_3asyD.Shader = {
 	flat: function flat() {
 		this.vertex = {
 			"attributePosition": "attribute vec3 position;\n",
@@ -15,10 +15,13 @@ _3asyD.shaders = {
 				vColor = color;
 				vNormal = vec3(mMatrix*vec4(normal,0));
 				gl_Position = pMatrix*vMatrix*mMatrix*vec4(position,1.0);
-				",
-			"sourceCode": "attributePosition+"attributeColor
-			+"attributeNormal+"uniformPMatrix+"uniformVMatrix
-			+"uniformMMatrix+"varyingColor+"varyingNormal+main; 
+			}",
+			"sourceCode": function() {
+				var vert = this.vertex;
+				vert.attributePosition+vert.attributeColor+vert.attributeNormal+
+				vert.uniformPMatrix+vert.uniformVMatrix+vert.uniformMMatrix+vert.varyingColor+
+				vert.varyingNormal+vert.main;
+			}
 		},
 
 		this.fragment = {
@@ -36,9 +39,14 @@ _3asyD.shaders = {
 				vec3 I_diffuse = max(0,dot(vNoraml,L))*(MATERIAL_DIFFUSE*SOURCE_DIFFUSE)*10.0;
 				vec3 I = I_ambient+I_diffuse;
 				gl_FragColor = vec4(I*vColor,1.0);
-
-			",
-			"sourceCode": "precision+varyingColor+"varyingNormal+"uniformSourceAmbient+"uniformSourceDiffuse+"uniformSourceDirection+"uniformMaterialDiffuse+"uniformMaterialAmbient+"main;
+			}",
+			"sourceCode": function() {
+				var frag = this.fragment;
+				return frag.precision+frag.varyingColor+frag.varyingNormal+
+				frag.uniformSourceAmbient+frag.uniformSourceDiffuse+
+				frag.uniformSourceDirection+frag.uniformMaterialDiffuse+
+				frag.uniformMaterialAmbient+frag.main;
+			}
 		}
 	},
 
@@ -59,10 +67,14 @@ _3asyD.shaders = {
 				gl_Position = pMatrix*vMatrix*mMatrix*vec4(position,1.0);
 				vView = vec3(vMatrix*mMatrix*vec4(position,1));
 				vColor = color;
-			";
-			"sourceCode": "attributePosition+"attributeColor
-			+"attributeNormal+"uniformPMatrix+"uniformVMatrix
-			+"uniformMMatrix+"varyingColor+"varyingNormal+"varyingView+"main; 
+			",
+			"sourceCode": function() {
+				var vert = this.vertex;
+				return vert.attributePosition+vert.attributeColor
+				+vert.attributeNormal+vert.uniformPMatrix+vert.uniformVMatrix
+				+vert.uniformMMatrix+vert.varyingColor+vert.varyingNormal+
+				vert.varyingView+vert.main;
+			}
 		},
 		this.fragment = {
 			"precision": "precision mediump float;\n",
@@ -87,14 +99,40 @@ _3asyD.shaders = {
 				vec3 I_specular = SOURCE_SPECULAR*MATERIAL_SPECULAR*pow(max(dot(R,V),0.),GLOSS);
 				vec3 I = I_ambient+I_diffuse+I_specular;
 				gl_FragColor = vec4(I*vColor,1.);
-
-			";
-			"sourceCode": "precsion+"varyingColor+"varyingNormal+
-			"varyingView+"uniformSourceAmbient+"uniformSourceDiffuse+thus.uniformSourceDirection
-			+"uniformMaterialAmbient+"uniformMaterialDiffuse+"uniformMaterialSpecular+"uniformGloss
-			+"main;
-
-		
+			",
+			"sourceCode": function() {
+				var frag = this.fragment; 
+				return frag.precsion+frag.varyingColor+frag.varyingNormal+
+				frag.varyingView+frag.uniformSourceAmbient+frag.uniformSourceDiffuse+frag.uniformSourceDirection
+				+frag.uniformMaterialAmbient+frag.uniformMaterialDiffuse+frag.uniformMaterialSpecular+frag.uniformGloss
+				+frag.main;
+			}
+		}
+	}
+}
+_3asyD.Shader.prototype.createProgramFromInteral = function(programName,typeString) {
+		var GL = this.gl;
+		var SHADER_PROGRAM=null;
+		var vertexShade = GL.createShader(GL.VERTEX_SHADER);
+		var fragShade = GL.createShader(GL.FRAGMENT_SHADER);
+		var material = new _3asyD.shaders[typeString];
+		GL.shaderSource(vertexShade,material.vertex.sourceCode);
+		GL.compileShader(vertexShade);
+		if(!GL.getShaderParameter(vertexShade,GL.COMPILE_STATUS)) {
+			console.error("Vertex Shader Failed to Compile.\n"+GL.getShaderInfoLog(vertexShade)+"\n");
+			return false;
+		}
+		GL.shaderSource(fragShade,material.fragment.sourceCode);
+		GL.compileShader(fragShade);
+		if(!GL.getShaderParameter(fragShade,GL.COMPILE_STATUS)) {
+			console.error("Fragment Shader Failed to Compile.\n"+GL.getShaderInfoLog(fragShade)+"\n");
+			return false;
+		}
+		SHADER_PROGRAM = GL.createProgram();
+		GL.attachShader(SHADER_PROGRAM,vertexShade);
+		GL.attachShader(SHADER_PROGRAM,fragShade);
+		GL.linkProgram(SHADER_PROGRAM);
+	},
 	
 
 
