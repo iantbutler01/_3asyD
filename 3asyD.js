@@ -17,17 +17,7 @@ _3asyD = {
 		return (deg*Math.PI/180);
 	},
 
-	setPerspectiveProj: function(angle, a, zMax, zMin) {
-		var tan = Math.tan(_3asyD.dtor(0.5*angle));
-		var A = -(zMax+zMin)/(zMax-zMin);
-		var B = (-2*zMax*zMin)/(zMax-zMin)
-		this.PMATRIX = [
-		(0.5/tan),0,0,0,
-		0,(0.5*a/tan),0,0,
-		0,0,A,B,
-		0,0,-1,0
-		]
-	},
+
 
 	getI4: function() {
 		return [
@@ -168,16 +158,8 @@ _3asyD = {
 	},
 	
 
-	setProgram: function(name) {
-		try {
-			this.gl.useProgram(this.programs[name]);
-			this.currentProgram = this.programs[name];
-		}
-		catch(err) {
-			console.error(err);
-		}
-	},
-	
+
+
 	hexToGLRGB: function(hexValue) {
 		console.log(hexValue.length);
 		var newHexValue = "";
@@ -230,16 +212,6 @@ _3asyD = {
 		GL.bindBuffer(GL.ARRAY_BUFFER,shape.COLOR_BUFFER);
 		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(shape.COLOR),GL.STATIC_DRAW);
 	},
-	setDrawType: function(shape,typeString) { //FIX
-		try {
-			var GL = this.gl;
-			shape.DRAWTYPE = GL[typeString];
-		}
-		catch(err) {
-			console.error(err);
-			return false;
-		}
-	},
 
 	loadAttributes: function(attributeNameArray) {
 		var GL = this.gl;
@@ -254,10 +226,15 @@ _3asyD = {
 		
 	},
 
-	drawElements: function(shapeList) {
+	drawStage: function(shapeList,glOptionsList) {
 		var GL = this.gl;
 		var attributes = this.ATTRIBUTES;
 		try {
+			GL.enable(gl.DEPTH_TEST); //MOVE OPTIONS TO ENABLE/DISABLE system per each draw.
+			GL.depthFunc(gl.LEQUAL);
+			GL.clearColor(0.0,0.0,0.0,0.0);
+			GL.clearDepth(1.0);
+			GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
 			GL.uniformMatrix4fv(this.UNIFORMS["pMatrix"],false,this.PMATRIX);
 			GL.uniformMatrix4fv(this.UNIFORMS["vMatrix"],false,this.VMATRIX);
 			for(var i =  0; i < shapeList.length; ++i) {
@@ -277,109 +254,6 @@ _3asyD = {
 			console.error(err);
 			return false;
 		}
-	},
-
-	
-
-	Cube: function Cube(length,width,height) {
-		var l = length/2;
-		var w = width/2;
-		var h = height/2;
-		this.CHILDREN = [];
-		this.INDICIES = 36;
-		this.MATERIAL = "FLAT";
-		this.LENGTH = length;
-		this.WIDTH = width;
-		this.HEIGHT = height;
-		this.MMATRIX = _3asyD.getI4();
-		this.DRAWTYPE = _3asyD.gl.TRIANGLES;
-		this.VERTICIES = [  
-			-1*l,-1*w,-1*h,   
-			1*l,-1*w,-1*h,     
-			1*l, 1*w,-1*h,     
-			-1*l, 1*w,-1*h,     
-
-			-1*l,-1*w, 1*h,    
-			1*l,-1*w, 1*h,    
-			1*l, 1*w, 1*h,     
-			-1*l, 1*w, 1*h,     
-
-			-1*l,-1*w,-1*h,     
-			-1*l, 1*w,-1*h,     
-			-1*l, 1*w, 1*h,    
-			-1*l,-1*w, 1*h,    
-
-			1*l,-1*w,-1*h,     
-			1*l, 1*w,-1*h,     
-			1*l, 1*w, 1*h,     
-			1*l,-1*w, 1*h,     
-
-			-1*l,-1*w,-1*h,     
-			-1*l,-1*w, 1*h,     
-			1*l,-1*w, 1*h,    
-			1*l,-1*w,-1*h,     
-
-			-1*l, 1*w,-1*h,   
-			-1*l, 1*w, 1*h,    
-			1*l, 1*w, 1*h,    
-			1*l, 1*w,-1*h,    
-	    ];
-
-		this.FACES = [    
-			0,1,2,
-			0,2,3,
-
-			4,5,6,
-			4,6,7,
-
-			8,9,10,
-			8,10,11,
-
-			12,13,14,
-			12,14,15,
-
-			16,17,18,
-			16,18,19,
-
-			20,21,22,
-			20,22,23
-	    ];
-		
-		this.NORMALS = [
-		//BOTTOM
-		0,0,-1,
-		0,0,-1,
-		0,0,-1,
-		0,0,-1,
-		//TOP
-		0,0,1,
-		0,0,1,
-		0,0,1,
-		0,0,1,
-		//BACK
-		-1,0,0,
-		-1,0,0,
-		-1,0,0,
-		-1,0,0,
-		//FRONT
-		1,0,0,
-		1,0,0,
-		1,0,0,
-		1,0,0,
-		//LEFT
-		0,-1,0,
-		0,-1,0,
-		0,-1,0,
-		0,-1,0,
-		//RIGHT		
-		0,1,0,
-		0,1,0,
-		0,1,0,
-		0,1,0
-		];
-
-		this.COLOR = []
-		this.prototype.constructor = this;
 	},
 
 	Sphere: function Sphere(radiusX,radiusY,radiusZ,smoothX,smoothY) {
