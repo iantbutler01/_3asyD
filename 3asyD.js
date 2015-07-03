@@ -2,9 +2,6 @@ var PI = Math.PI;
 _3asyD = {
 	gl: null,
 	programs: [],
-	currentProgram: null,
-	UNIFORMS: [],
-	ATTRIBUTES: [],
 	PMATRIX: null,
 	VMATRIX: [
 		1,0,0,0,
@@ -129,37 +126,7 @@ _3asyD = {
 		}
 		else return false;
 	},
-
-	createFromExternalScripts: function(vShaderId,fShaderId,programName,callback){
-		var GL = this.gl;
-		var SHADER_PROGRAM=null;
-		$.when($.get(vShaderId),$.get(fShaderId)).done(function(vShaderSrc,fShaderSrc){
-			var vertexShade = GL.createShader(GL.VERTEX_SHADER);
-			var fragShade = GL.createShader(GL.FRAGMENT_SHADER);
-			GL.shaderSource(vertexShade,vShaderSrc[0]);
-			GL.compileShader(vertexShade);
-			if(!GL.getShaderParameter(vertexShade,GL.COMPILE_STATUS)) {
-				console.error("Vertex Shader Failed to Compile.\n"+GL.getShaderInfoLog(vertexShade)+"\n");
-				return false;
-			}
-			GL.shaderSource(fragShade,fShaderSrc[0]);
-			GL.compileShader(fragShade);
-			if(!GL.getShaderParameter(fragShade,GL.COMPILE_STATUS)) {
-				console.error("Fragment Shader Failed to Compile.\n"+GL.getShaderInfoLog(fragShade)+"\n");
-				return false;
-			}
-			SHADER_PROGRAM = GL.createProgram();
-			GL.attachShader(SHADER_PROGRAM,vertexShade);
-			GL.attachShader(SHADER_PROGRAM,fragShade);
-			GL.linkProgram(SHADER_PROGRAM);
-			_3asyD.programs[programName]=SHADER_PROGRAM;
-			callback();
-		});
-	},
 	
-
-
-
 	hexToGLRGB: function(hexValue) {
 		console.log(hexValue.length);
 		var newHexValue = "";
@@ -174,59 +141,8 @@ _3asyD = {
 		return [r/255,g/255,b/255];
 	},
 
-	loadUniforms: function(uniformNamesArray) {
-		var GL = this.gl;
-		var currentProgram = this.currentProgram;
-		var uniforms = {};
-		for(var i =  0; i < uniformNamesArray.length; ++i) {
-			uniforms[uniformNamesArray[i]] = (GL.getUniformLocation(currentProgram,uniformNamesArray[i]));
-		}
-		this.UNIFORMS = uniforms;
-	},
 
-	setLightDirection: function(directionVector) {
-		var GL = this.gl;
-		var currentProgram = _3asyD.currentProgram;
-		GL.uniform3fv(GL.getUniformLocation(currentProgram,"SOURCE_DIRECTION"),new Float32Array(this.vectorByScalar(directionVector,-1)));
-	},
-
-	setLight: function(typeString,color,gloss) {
-		var GL = this.gl;
-		var currentProgram = _3asyD.currentProgram;
-		GL.uniform3fv(GL.getUniformLocation(currentProgram,typeString),new Float32Array(this.hexToGLRGB(color)));
-		if(gloss) GL.uniform1f(GL.getUniformLocation(currentProgram,"GLOSS"),gloss);
-
-	},
-	bufferSetUp: function(shape) {
-		var GL = this.gl;
-		shape.VERTEX_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ARRAY_BUFFER,shape.VERTEX_BUFFER);
-		GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(shape.VERTICIES),GL.STATIC_DRAW);
-		shape.FACE_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,shape.FACE_BUFFER);
-		GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,new Uint16Array(shape.FACES),GL.STATIC_DRAW);
-		shape.NORMAL_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ARRAY_BUFFER,shape.NORMAL_BUFFER);
-		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(shape.NORMALS),GL.STATIC_DRAW);
-		shape.COLOR_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ARRAY_BUFFER,shape.COLOR_BUFFER);
-		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(shape.COLOR),GL.STATIC_DRAW);
-	},
-
-	loadAttributes: function(attributeNameArray) {
-		var GL = this.gl;
-		var currentProgram = this.currentProgram;
-		for(var i =  0; i < attributeNameArray.length; ++i) {
-			console.log(attributeNameArray[i]);
-			this.ATTRIBUTES[attributeNameArray[i]] = GL.getAttribLocation(currentProgram,attributeNameArray[i]);
-			console.log(this.ATTRIBUTES[attributeNameArray[i]]);
-			GL.enableVertexAttribArray(this.ATTRIBUTES[attributeNameArray[i]]);
-		}
-
-		
-	},
-
-	drawStage: function(shapeList,glOptionsList) {
+	drawStage: function(stage) { //,glOptionsList
 		var GL = this.gl;
 		var attributes = this.ATTRIBUTES;
 		try {
@@ -235,19 +151,23 @@ _3asyD = {
 			GL.clearColor(0.0,0.0,0.0,0.0);
 			GL.clearDepth(1.0);
 			GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
-			GL.uniformMatrix4fv(this.UNIFORMS["pMatrix"],false,this.PMATRIX);
+			GL.uniformMatrix4fv(stage.CAMERA,false,this.PMATRIX);
 			GL.uniformMatrix4fv(this.UNIFORMS["vMatrix"],false,this.VMATRIX);
-			for(var i =  0; i < shapeList.length; ++i) {
-				GL.uniformMatrix4fv(this.UNIFORMS["mMatrix"],false,shapeList[i].MMATRIX);
-				GL.bindBuffer(GL.ARRAY_BUFFER,shapeList[i].VERTEX_BUFFER);
-				GL.vertexAttribPointer(attributes["position"],3,GL.FLOAT,false,0,0);
-				GL.bindBuffer(GL.ARRAY_BUFFER,shapeList[i].COLOR_BUFFER);
-				GL.vertexAttribPointer(attributes["color"],3,GL.FLOAT,false,0,0);
-				GL.bindBuffer(GL.ARRAY_BUFFER,shapeList[i].NORMAL_BUFFER);
-				GL.vertexAttribPointer(attributes["normal"],3,GL.FLOAT,false,0,0);
-				GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,shapeList[i].FACE_BUFFER);
-				GL.drawElements(shapeList[i].DRAWTYPE,shapeList[i].INDICIES,GL.UNSIGNED_SHORT,0);
-			}
+			for(var i =  0; i < stage.MESHES.length; ++i) {
+				var objectList = stage.MESHES[i].OBJECTS;
+				var attributes = stage.MESHES[i].ATTRIBUTES;
+				for(var j = 0; j < objectList.length; ++j)
+				{
+					GL.uniformMatrix4fv(this.UNIFORMS["mMatrix"],false,objectList[i].MMATRIX);
+					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[i].VERTEX_BUFFER);
+					GL.vertexAttribPointer(attributes["position"],3,GL.FLOAT,false,0,0);
+					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[i].COLOR_BUFFER);
+					GL.vertexAttribPointer(attributes["color"],3,GL.FLOAT,false,0,0);
+					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[i].NORMAL_BUFFER);
+					GL.vertexAttribPointer(attributes["normal"],3,GL.FLOAT,false,0,0);
+					GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,objectList[i].FACE_BUFFER);
+					GL.drawElements(objectList[i].DRAWTYPE,objectList[i].INDICIES,GL.UNSIGNED_SHORT,0);
+				}
 			GL.flush();
 		}
 		catch(err) {

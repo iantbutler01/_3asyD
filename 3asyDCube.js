@@ -1,9 +1,10 @@
 	_3asyD.Cube = function Cube(length,width,height,colorScheme,color_s) {
+		_3asyD.Shape.call(this);
 		var l = length/2;
 		var w = width/2;
 		var h = height/2;
 		this.CHILDREN = [];
-		this.INDICIES = 36;
+		this.INDICIES = 24;
 		this.LENGTH = length;
 		this.WIDTH = width;
 		this.HEIGHT = height;
@@ -93,7 +94,37 @@
 		0,1,0
 		];
 
-		this.COLOR = []
+		this.COLOR = [ 
+			1,1,0,
+			1,1,0,
+			1,1,0,
+			1,1,0,
+
+			0,0,1,
+			0,0,1,
+			0,0,1,
+			0,0,1,
+
+			0,1,1,
+			0,1,1,
+			0,1,1,
+			0,1,1,
+
+			1,0,0,
+			1,0,0,
+			1,0,0,
+			1,0,0,
+
+			1,0,1,
+			1,0,1,
+			1,0,1,
+			1,0,1,
+
+			0,1,0,
+			0,1,0,
+			0,1,0,
+			0,1,0
+        ];
 	};
 
 	_3asyD.Cube.prototype = Object.create(_3asyD.Shape.prototype);

@@ -1,74 +1,32 @@
 <html>
 <head>
-<script src='jquery-2.1.4.min.js'></script>
-<script type='text/javascript' src="_3asyD.js"></script>
+<script type='text/javascript' src="3asyDCombined.js"></script>
+<script type='text/javascript' src="jquery-2.1.4.min.js"></script>
 <script type='text/javascript' id='glCode'>
 	window.onload = function() {
-		_3asyD.setGL("#canvas");
-		var gl = _3asyD.getGL();
-		_3asyD.createProgramFromInternal("programOne","flat");
-		_3asyD.setProgram("programOne");
-		_3asyD.loadUniforms(["pMatrix","vMatrix","mMatrix"]);
-		_3asyD.loadAttributes(["color","position","normal"]);
-		_3asyD.setPerspectiveProj(40,($('#canvas').width()/$('#canvas').height()),1,100);
-		_3asyD.setLightDirection([-0.4,-0.4,1.0]);
-		_3asyD.setLight("SOURCE_AMBIENT","#FFAAFF");
-		_3asyD.setLight("SOURCE_DIFFUSE","#FF5555");
-		_3asyD.setLight("SOURCE_SPECULAR","#111111");
-		_3asyD.setLight("MATERIAL_AMBIENT","#FFB2FF");
-		_3asyD.setLight("MATERIAL_DIFFUSE","#FFAAAA");
-		_3asyD.setLight("MATERIAL_SPECULAR","#FFAAAA",30.0);
+		_3asyD.setGL("canvas");
+		//var glOptions = [];
+		//_3asyD.setGLOptions();
+		var viewport = [0.0,0.0,$('#canvas').width(),$('#canvas').height()];
+		var stage = new _3asyD.Stage("test",viewport);
+		stage.setPerspectiveCamera(40,($('#canvas').width()/$('#canvas').height()),1,100);
+		var mesh = new _3asyD.Mesh("CUBE_MESH","PHONG");
+		var CUBE_MESH_LIGHTS = ["SOURCE_AMBIENT","SOURCE_DIFFUSE","SOURCE_SPECULAR","MATERIAL_AMBIENT","MATERIAL_DIFFUSE","MATERIAL_SPECULAR"];
+		var CUBE_MESH_LIGHTS_COLOR = ["#FFAAFF","#FF5555","#111111","#FFB2FF","#FFAAAA","#FFAAAA"];
+		mesh.setLight(CUBE_MESH_LIGHTS,CUBE_MESH_LIGHTS_COLOR,30.0,[-0.4,-0.4,1.0]);
+		stage.add(mesh);
 	//-------------Shapes
-
-		var FunTime = [];
 		var Cube = new _3asyD.Cube(2,2,2);
-		_3asyD.bufferSetUp(Cube);
-		for(var i = 0; i < 10000; ++i) {
-			var Radii = (Math.random())*.8;
-			if(i%2 == 0) {
-				FunTime.push(new _3asyD.Cube(Radii,Radii,Radii));
-			}
-			else FunTime.push(new _3asyD.Sphere(Radii/2,Radii/2,Radii/2,10,10));
-		}
-		for(var i = 0; i < FunTime.length; ++i) {
-			_3asyD.bufferSetUp(FunTime[i]);
-			_3asyD.setDrawType(FunTime[i],"TRIANGLES");
-			var pX = Math.random() < 0.5 ? -1 : 1;
-			var pY = Math.random() < 0.5 ? -1 : 1;
-			_3asyD.translateXYZ(FunTime[i].MMATRIX,pX*(Math.random())*100,pY*(Math.random())*100,0);
-
-		}
-			
-		FunTime.push(Cube);
-		//Sphere.DRAWTYPE = gl.TRIANGLES;
-		_3asyD.translateXYZ(_3asyD.VMATRIX,0,0,20);
+		stage.MESHES[0].addShape(Cube);		
+		_3asyD.translateXYZ(stage.VMATRIX,0,0,20);
 
 	//-------------Draw
-		gl.enable(gl.DEPTH_TEST);
-		gl.depthFunc(gl.LEQUAL);
-		gl.clearColor(0.0,0.0,0.0,0.0);
-		gl.clearDepth(1.0);
 		var time_old = 0;
-		//_3asyD.rotateX(_3asyD.VMATRIX,3.0);
-		//_3asyD.rotateZ(_3asyD.VMATRIX,2.0);
-		gl.viewport(0.0,0.0,$('#canvas').width(),$('#canvas').height());
+
+		
 		function animate(time){
-			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-			var dt = time-time_old;
-			for(var i = 0; i < FunTime.length; ++i) {
-				_3asyD.rotateX(FunTime[i].MMATRIX,dt*.1);
-				_3asyD.rotateY(FunTime[i].MMATRIX,dt*.001);
-				var p = Math.random() < 0.5 ? -1 : 1;
-				_3asyD.translateXYZ(FunTime[i].MMATRIX,p*dt*.001,p*dt*.001,p*dt*.001);
-			}
-			//_3asyD.rotateX(_3asyD.VMATRIX,dt*.0001);
-			time_old=time;
-			var chunk = FunTime.length/2;
-			for (var i = 0, j = FunTime.length; i < j; i+=chunk) {
-    			var tempArray = FunTime.slice(i,i+chunk);
-    			_3asyD.drawElements(tempArray);
-			}
-			
+			time_old=time;		
+			_3asyD.drawStage(stage);	
 			window.requestAnimationFrame(animate);
 		};
 		animate(0);			

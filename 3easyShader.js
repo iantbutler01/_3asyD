@@ -4,9 +4,13 @@ _3asyD.Shader = function(typeString) {
 	var material = null;
 	if(typeString == "FLAT") {
 		material = new this.flat();
+		this.UNIFORMS = material.UNIFORMS;
+		this.ATTRIBUTES = material.ATTRIBUTES;
 	}
 	if(typeString == "PHONG") {
 		material = new this.phong();
+		this.UNIFORMS = material.UNIFORMS;
+		this.ATTRIBUTES = material.ATTRIBUTES;
 	}
 	var GL = this.prototype.gl;
 	var SHADER_PROGRAM=null;
@@ -33,6 +37,8 @@ _3asyD.Shader = function(typeString) {
 _3asyD.Shader.prototype = _3asyD;
 _3asyD.Shader.prototype.constructor = _3asyD.Shader;
 _3asyD.Shader.prototype.flat = function() {
+	this.UNIFORMS = ["pMatrix","vMatrix","mMatrix","SOURCE_AMBIENT","SOURCE_DIFFUSE","SOURCE_DIRECTION","MATERIAL_AMBIENT","MATERIAL_DIFFUSE"]
+	this.ATTRIBUTES =["color","position","normal"]
 	this.vertex = {
 		"attributePosition": "attribute vec3 position;\n",
 		"attributeColor": "attribute vec3 color;\n",
@@ -82,64 +88,7 @@ _3asyD.Shader.prototype.flat = function() {
 };
 
 
-_3asyD.Shader.prototype.phong = function() {
-	this.vertex = {
-		"attributePosition": "attribute vec3 position;\n",
-		"attributeColor": "attribute vec3 color;\n",
-		"attributeNormal": "attribute vec3 normal;\n",
-		"uniformPMatrix": "uniform mat4 pMatrix;\n",
-		"uniformVMatrix": "uniform mat4 vMatrix;\n",
-		"uniformMMatrix": "uniform mat4 mMatrix;\n",
-		"varyingColor": "varying vec3 vColor;\n",
-		"varyingNormal": "varying vec3 vNormal;\n",
-		"varyingView": "varying vec3 vView;\n",
-		"main": "void main(void) {
-			vNorm = vec3(mMatrix*vec4(normal,0));
-			gl_Position = pMatrix*vMatrix*mMatrix*vec4(position,1.0);
-			vView = vec3(vMatrix*mMatrix*vec4(position,1));
-			vColor = color;
-		",
-		"sourceCode": function() {
-			var vert = this.vertex;
-			return vert.attributePosition+vert.attributeColor
-			+vert.attributeNormal+vert.uniformPMatrix+vert.uniformVMatrix
-			+vert.uniformMMatrix+vert.varyingColor+vert.varyingNormal+
-			vert.varyingView+vert.main;
-		}
-	},
-	this.fragment = {
-		"precision": "precision mediump float;\n",
-		"varyingColor": "varying vec3 vColor;\n",
-		"varyingNormal": "varying vec3 vNorm;\n",
-		"varyingView": "varying vec3 vView;\n",
-		"uniformSourceAmbient": "uniform vec3 SOURCE_AMBIENT;\n",
-		"uniformSourceDiffuse": "uniform vec3 SOURCE_DIFFUSE;\n",
-		"uniformSourceSpecular": "uniform vec3 SOURCE_SPECULAR;\n",
-		"uniformSourceDirection": "uniform vec3 SOURCE_DIRECTION;\n",
-		"uniformMaterialAmbient": "uniform vec3 MATERIAL_AMBIENT;\n",
-		"uniformMaterialDiffuse": "uniform vec3 MATERIAL_DIFFUSE;\n",
-		"uniformMaterialSpecular": "uniform vec3 MATERIAL_SPECULAR;\n",
-		"uniformGloss": "uniform float GLOSS;\n",
 
-		"main": "void main(void) {
-			vec3 I_ambient = SOURCE_AMBIENT*MATERIAL_AMBIENT;
-			vec3 V = normalize(vView);
-			vec3 L = normalize(SOURCE_DIRECTION);
-			vec3 I_diffuse = max(0.0,dot(vNorm,L))*(MATERIAL_DIFFUSE*SOURCE_DIFFUSE)*10.0;
-			vec3 R = reflect(SOURCE_DIRECTION,vNorm);
-			vec3 I_specular = SOURCE_SPECULAR*MATERIAL_SPECULAR*pow(max(dot(R,V),0.),GLOSS);
-			vec3 I = I_ambient+I_diffuse+I_specular;
-			gl_FragColor = vec4(I*vColor,1.);
-		",
-		"sourceCode": function() {
-			var frag = this.fragment; 
-			return frag.precsion+frag.varyingColor+frag.varyingNormal+
-			frag.varyingView+frag.uniformSourceAmbient+frag.uniformSourceDiffuse+frag.uniformSourceDirection
-			+frag.uniformMaterialAmbient+frag.uniformMaterialDiffuse+frag.uniformMaterialSpecular+frag.uniformGloss
-			+frag.main;
-		}
-	}
-};
-	
+
 
 
