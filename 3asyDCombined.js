@@ -93,12 +93,12 @@ _3asyD = {
 	},
 
 
-	translateXYZ: function(moveMatrix, x,y,z){
-		moveMatrix[12]+=x;
+	translateXYZ: function(matrix, x,y,z){
+		matrix[12]+=x;
 
-		moveMatrix[13]+=y;
+		matrix[13]+=y;
 
-		moveMatrix[14]+=z;
+		matrix[14]+=z;
 	},
 
 	setGL: function(id) {
@@ -152,19 +152,19 @@ _3asyD = {
 				var objectList = stage.MESHES[i].OBJECTS;
 				var attributes = stage.MESHES[i].ATTRIBUTES;
 				GL.useProgram(mesh.SHADER.SHADER_PROGRAM);
+				GL.uniformMatrix4fv(mesh.UNIFORMS["pMatrix"],false,stage.CAMERA);
+				GL.uniformMatrix4fv(mesh.UNIFORMS["vMatrix"],false,stage.VMATRIX);
 				for(var j = 0; j < objectList.length; ++j)
 				{
-					GL.uniformMatrix4fv(mesh.UNIFORMS["pMatrix"],false,stage.CAMERA);
-					GL.uniformMatrix4fv(mesh.UNIFORMS["vMatrix"],false,stage.VMATRIX);
-					GL.uniformMatrix4fv(mesh.UNIFORMS["mMatrix"],false,objectList[i].MMATRIX);
-					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[i].VERTEX_BUFFER);
+
+					GL.uniformMatrix4fv(mesh.UNIFORMS["mMatrix"],false,objectList[j].MMATRIX);
+					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[j].VERTEX_BUFFER);
 					GL.vertexAttribPointer(mesh.ATTRIBUTES["position"],3,GL.FLOAT,false,0,0);
-					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[i].COLOR_BUFFER);
+					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[j].COLOR_BUFFER);
 					GL.vertexAttribPointer(mesh.ATTRIBUTES["color"],3,GL.FLOAT,false,0,0);
-					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[i].NORMAL_BUFFER);
+					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[j].NORMAL_BUFFER);
 					GL.vertexAttribPointer(mesh.ATTRIBUTES["normal"],3,GL.FLOAT,false,0,0);
 					GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,objectList[j].FACE_BUFFER);
-					console.log(objectList[j].INDICIES);
 					GL.drawElements(objectList[j].DRAWTYPE,objectList[j].INDICIES,GL.UNSIGNED_SHORT,0);
 				}
 			}
@@ -378,7 +378,7 @@ _3asyD.Shape =  function () {
 		this.COLOR = [];
 		this.DRAWTYPE = this.gl.TRIANGLES;
 		this.MMATRIX = this.getI4();
-		this.bufferSetUp();
+		
 	};
 _3asyD.Shape.prototype = _3asyD;
 _3asyD.Shape.prototype.constructor = _3asyD.Shape
@@ -453,8 +453,6 @@ _3asyD.Mesh = function(name, shaderType, objects) {
 		this.loadShaderVariables();
 		this.SHADER_TYPE = this.SHADER.type;
 	}
-	this.UNIFORMS = [];
-	this.ATTRIBUTES = [];
 	this.NAME = name;
 };
 _3asyD.Mesh.prototype = _3asyD;
@@ -500,21 +498,22 @@ _3asyD.Mesh.prototype.loadShaderVariables = function() {
 		var currentProgram = this.SHADER.SHADER_PROGRAM;
 		var uniformNamesArray = this.SHADER.UNIFORMS;
 		var attributeNameArray = this.SHADER.ATTRIBUTES;
-		var uniforms = {};
-		var attributes = {};
+		this.UNIFORMS = {};
+		this.ATTRIBUTES = {};
 
 		for(var i =  0; i < uniformNamesArray.length; ++i) {
-			uniforms[uniformNamesArray[i]] = (GL.getUniformLocation(currentProgram,uniformNamesArray[i]));
+			this.UNIFORMS[uniformNamesArray[i]] = (GL.getUniformLocation(currentProgram,uniformNamesArray[i]));
 		}
-		this.UNIFORMS = uniforms;
+
 
 		for(var i =  0; i < attributeNameArray.length; ++i) {
 			//(attributeNameArray[i]);
-			attributes[attributeNameArray[i]] = GL.getAttribLocation(currentProgram,attributeNameArray[i]);
+			this.ATTRIBUTES[attributeNameArray[i]] = GL.getAttribLocation(currentProgram,attributeNameArray[i]);
 			//(attributes[attributeNameArray[i]]);
-			GL.enableVertexAttribArray(attributes[attributeNameArray[i]]);
+			GL.enableVertexAttribArray(this.ATTRIBUTES[attributeNameArray[i]]);
 		}
-		this.ATTRIBUTES = attributes;
+		console.log(this);
+
 	};
 
 
@@ -524,7 +523,7 @@ _3asyD.Mesh.prototype.loadShaderVariables = function() {
 		var w = width/2;
 		var h = height/2;
 		this.CHILDREN = [];
-		this.INDICIES = 24;
+		this.INDICIES = 36;
 		this.LENGTH = length;
 		this.WIDTH = width;
 		this.HEIGHT = height;
@@ -645,6 +644,7 @@ _3asyD.Mesh.prototype.loadShaderVariables = function() {
 			0,1,0,
 			0,1,0
         ];
+        this.bufferSetUp();
 	};
 
 	_3asyD.Cube.prototype = Object.create(_3asyD.Shape.prototype);

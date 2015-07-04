@@ -16,15 +16,26 @@
 		mesh.setLight(CUBE_MESH_LIGHTS,CUBE_MESH_LIGHTS_COLOR,30.0,[-0.4,-0.4,1.0]);
 		stage.add(mesh);
 	//-------------Shapes
-		var Cube = new _3asyD.Cube(2,2,2);
-		stage.MESHES[0].addShape(Cube);		
-		_3asyD.translateXYZ(stage.VMATRIX,0,0,20);
-
-	//-------------Draw
-		var time_old = 0;
-
+		function getRandomInt(min, max) {
+    		return Math.random() * (max - min) + min;
+		}
+		for(var i = 0; i < 10; ++i) {
+			var x = getRandomInt(-30,30);
+			var y = getRandomInt(-30,30);
+			var z = getRandomInt(-5,5);
+			var cubeFun = new _3asyD.Cube(1,1,1);
+			_3asyD.translateXYZ(cubeFun.MMATRIX,x,y,z);
+			stage.MESHES[0].addShape(cubeFun);	
+		}
 		
+		_3asyD.translateXYZ(stage.VMATRIX,0,0,20);
+	//-------------Draw
+		var time_old = 0;	
 		function animate(time){
+			var dt=time-time_old;
+			for(var i = 0; i < stage.MESHES[0].OBJECTS.length; ++i) {
+				_3asyD.rotateY(stage.MESHES[0].OBJECTS[i].MMATRIX, dt*0.002);
+			}
 			time_old=time;		
 			_3asyD.drawStage(stage);	
 			window.requestAnimationFrame(animate);

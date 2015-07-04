@@ -9,7 +9,6 @@ _3asyD.Shape =  function () {
 		this.COLOR = [];
 		this.DRAWTYPE = proto.gl.TRIANGLES;
 		this.MMATRIX = proto.getI4();
-		this.bufferSetUp();
 	};
 _3asyD.Shape.prototype = _3asyD;
 _3asyD.Shape.prototype.constructor = _3asyD.Shape
@@ -24,7 +23,7 @@ _3asyD.Shape.prototype.setDrawType = function(typeString) { //FIX
 	}
 };
 _3asyD.Shape.prototype.bufferSetUp = function() {
-		var GL = this.prototype.gl;
+		var GL = this.gl;
 		this.VERTEX_BUFFER = GL.createBuffer();
 		GL.bindBuffer(GL.ARRAY_BUFFER,shape.VERTEX_BUFFER);
 		GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(this.VERTICIES),GL.STATIC_DRAW);

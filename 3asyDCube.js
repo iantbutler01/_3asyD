@@ -125,6 +125,7 @@
 			0,1,0,
 			0,1,0
         ];
+        this.bufferSetUp();
 	};
 
 	_3asyD.Cube.prototype = Object.create(_3asyD.Shape.prototype);
