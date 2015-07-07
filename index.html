@@ -19,23 +19,22 @@
 		function getRandomInt(min, max) {
     		return Math.random() * (max - min) + min;
 		}
-		for(var i = 0; i < 10; ++i) {
+		for(var i = 0; i < 100000; ++i) {
 			var x = getRandomInt(-30,30);
 			var y = getRandomInt(-30,30);
 			var z = getRandomInt(-5,5);
 			var cubeFun = new _3asyD.Cube(1,1,1);
-			_3asyD.translateXYZ(cubeFun.MMATRIX,x,y,z);
+			cubeFun.move(x,y,z);
 			stage.MESHES[0].addShape(cubeFun);	
 		}
-		
-		_3asyD.translateXYZ(stage.VMATRIX,0,0,20);
+		stage.MESHES[0].setDrawType("LINES");
+		stage.MESHES[0].readyForDraw();
+		_3asyD.translateXYZ(stage.VMATRIX,0,0,10);
 	//-------------Draw
 		var time_old = 0;	
 		function animate(time){
 			var dt=time-time_old;
-			for(var i = 0; i < stage.MESHES[0].OBJECTS.length; ++i) {
-				_3asyD.rotateY(stage.MESHES[0].OBJECTS[i].MMATRIX, dt*0.002);
-			}
+			_3asyD.rotateY(stage.MESHES[0].MMATRIX, dt*0.002);
 			time_old=time;		
 			_3asyD.drawStage(stage);	
 			window.requestAnimationFrame(animate);

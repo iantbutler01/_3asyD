@@ -8,7 +8,6 @@
 		this.LENGTH = length;
 		this.WIDTH = width;
 		this.HEIGHT = height;
-		this.DRAWTYPE = _3asyD.gl.TRIANGLES;
 		this.VERTICIES = [  
 			-1*l,-1*w,-1*h,   
 			1*l,-1*w,-1*h,     

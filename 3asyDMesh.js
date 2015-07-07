@@ -66,8 +66,22 @@ _3asyD.Mesh.prototype.loadShaderVariables = function() {
 			console.log(this.ATTRIBUTES[attributeNameArray[i]]);
 			GL.enableVertexAttribArray(this.ATTRIBUTES[attributeNameArray[i]]);
 		}
+	};
+_3asyD.Mesh.prototype.readyForDraw = function() {
+	this.MESH_VERTICIES = this.OBJECTS[0].VERTICIES.slice();
+	this.MESH_FACES = this.OBJECTS[0].FACES.slice();
+	this.MESH_NORMALS = this.OBJECTS[0].NORMALS.slice();
+	this.MESH_COLOR = this.OBJECTS[0].COLOR.slice();
+	var currentMax = (this.OBJECTS[0].VERTICIES.length)/3;
+	for(var i = 1; i < this.OBJECTS.length; ++i) {
+		var tempFaces = this.OBJECTS[i].FACES.slice();
+		_3asyD.extend(this.MESH_FACES,tempFaces,currentMax);
+		_3asyD.extend(this.MESH_VERTICIES,this.OBJECTS[i].VERTICIES);
+		_3asyD.extend(this.MESH_NORMALS,this.OBJECTS[i].NORMALS);
+		currentMax = (this.OBJECTS[i].VERTICIES.length)/3;
 	}
 
+};
 
 
 

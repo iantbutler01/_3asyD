@@ -136,7 +136,25 @@ _3asyD = {
 		return [r/255,g/255,b/255];
 	},
 
+	max: function(array) {
+		if(array.length > 50000) {
+			var currentMax = -Infinity;
+			for(var i = 0; i < array.length; ++i) {
+				if(array[i] > currentMax) {
+					currentMax = array[i];
+				}
+			}
+			return currentMax;
+		}
+		else return Math.max.apply(Math,array);
 
+	},
+	
+	extend: function(array1,array2,shift) {
+		if(typeof shift == 'undefined') shift = 0;
+		array2.forEach(function(entry) {array1.push(entry+shift)},this);
+	},
+	
 	drawStage: function(stage) { //,glOptionsList
 		var GL = this.gl;
 		var attributes = this.ATTRIBUTES;
@@ -149,24 +167,20 @@ _3asyD = {
 			GL.viewport(stage.VIEWPORT[0],stage.VIEWPORT[1],stage.VIEWPORT[2],stage.VIEWPORT[3]);
 			for(var i =  0; i < stage.MESHES.length; ++i) {
 				var mesh =  stage.MESHES[i];
-				var objectList = stage.MESHES[i].OBJECTS;
 				var attributes = stage.MESHES[i].ATTRIBUTES;
 				GL.useProgram(mesh.SHADER.SHADER_PROGRAM);
 				GL.uniformMatrix4fv(mesh.UNIFORMS["pMatrix"],false,stage.CAMERA);
 				GL.uniformMatrix4fv(mesh.UNIFORMS["vMatrix"],false,stage.VMATRIX);
-				for(var j = 0; j < objectList.length; ++j)
-				{
-
-					GL.uniformMatrix4fv(mesh.UNIFORMS["mMatrix"],false,objectList[j].MMATRIX);
-					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[j].VERTEX_BUFFER);
-					GL.vertexAttribPointer(mesh.ATTRIBUTES["position"],3,GL.FLOAT,false,0,0);
-					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[j].COLOR_BUFFER);
-					GL.vertexAttribPointer(mesh.ATTRIBUTES["color"],3,GL.FLOAT,false,0,0);
-					GL.bindBuffer(GL.ARRAY_BUFFER,objectList[j].NORMAL_BUFFER);
-					GL.vertexAttribPointer(mesh.ATTRIBUTES["normal"],3,GL.FLOAT,false,0,0);
-					GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,objectList[j].FACE_BUFFER);
-					GL.drawElements(objectList[j].DRAWTYPE,objectList[j].INDICIES,GL.UNSIGNED_SHORT,0);
-				}
+				GL.uniformMatrix4fv(mesh.UNIFORMS["mMatrix"],false,mesh.MMATRIX);
+				GL.bindBuffer(GL.ARRAY_BUFFER,mesh.VERTEX_BUFFER);
+				GL.vertexAttribPointer(mesh.ATTRIBUTES["position"],3,GL.FLOAT,false,0,0);
+				GL.bindBuffer(GL.ARRAY_BUFFER,mesh.COLOR_BUFFER);
+				GL.vertexAttribPointer(mesh.ATTRIBUTES["color"],3,GL.FLOAT,false,0,0);
+				GL.bindBuffer(GL.ARRAY_BUFFER,mesh.NORMAL_BUFFER);
+				GL.vertexAttribPointer(mesh.ATTRIBUTES["normal"],3,GL.FLOAT,false,0,0);
+				GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,mesh.FACE_BUFFER);
+				GL.drawElements(mesh.DRAWTYPE,mesh.MESH_INDICIES,GL.UNSIGNED_SHORT,0);
+				//console.log(mesh.MESH_INDICIES);
 			}
 			GL.flush();
 		}
@@ -189,10 +203,10 @@ _3asyD = {
 		this.VERTICIES = [];
 		this.NORMALS = [];
 		this.COLOR = [];
-		this.MATERIAL = "FLAT";
-		this.MMATRIX = _3asyD.getI4();
+		this.MATERIAL = "FLAT"; //remove
+		this.MMATRIX = _3asyD.getI4(); //remove
 		this.INDICIES = smoothX*smoothY*6;
-		this.DRAWTYPE = _3asyD.gl.TRIANGLES;
+		this.DRAWTYPE = _3asyD.gl.TRIANGLES; //remove
 		for(var i =  0; i <= PI; i+=(PI/sY)) {
 			for(j = 0; j <= 2*PI; j+=((2*PI)/sX)) {
 				var x = Math.sin(i)*Math.cos(j);
@@ -377,36 +391,28 @@ _3asyD.Shape =  function () {
 		this.FACES = [];
 		this.COLOR = [];
 		this.DRAWTYPE = this.gl.TRIANGLES;
-		this.MMATRIX = this.getI4();
 		
 	};
 _3asyD.Shape.prototype = _3asyD;
 _3asyD.Shape.prototype.constructor = _3asyD.Shape
-_3asyD.Shape.prototype.setDrawType = function(typeString) { //FIX
-	try {
-		var GL = this.gl;
-		this.DRAWTYPE = GL[typeString];
+
+
+_3asyD.Shape.prototype.move = function(x,y,z) {
+	for(var i = 0; i < this.VERTICIES.length; i+=3) {
+		this.VERTICIES[i] += x;
+		this.VERTICIES[i+1] += y;
+		this.VERTICIES[i+2] += z;
 	}
-	catch(err) {
-		console.error(err);
-		return false;
-	}
-};
-_3asyD.Shape.prototype.bufferSetUp = function() {
-		var GL = this.gl;
-		this.VERTEX_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ARRAY_BUFFER,this.VERTEX_BUFFER);
-		GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(this.VERTICIES),GL.STATIC_DRAW);
-		this.FACE_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,this.FACE_BUFFER);
-		GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,new Uint16Array(this.FACES),GL.STATIC_DRAW);
-		this.NORMAL_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ARRAY_BUFFER,this.NORMAL_BUFFER);
-		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.NORMALS),GL.STATIC_DRAW);
-		this.COLOR_BUFFER = GL.createBuffer();
-		GL.bindBuffer(GL.ARRAY_BUFFER,this.COLOR_BUFFER);
-		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.COLOR),GL.STATIC_DRAW);
-	};
+}; 
+_3asyD.Shape.prototype.rotateX = function() {
+
+}
+_3asyD.Shape.prototype.rotateY = function() {
+
+}
+_3asyD.Shape.prototype.rotateZ = function() {
+
+}
 
 _3asyD.Stage = function(name, viewport, meshes) {
 	this.VMATRIX = _3asyD.getI4();
@@ -440,6 +446,8 @@ _3asyD.Stage.prototype.setPerspectiveCamera = function(angle, a, zMax, zMin) {
 
 
 _3asyD.Mesh = function(name, shaderType, objects) {
+	this.MMATRIX = _3asyD.getI4();
+	this.DRAWTYPE = _3asyD.gl.TRIANGLES;
 	if(typeof objects != 'undefined') {
 		this.OBJECTS = objects;
 
@@ -455,6 +463,7 @@ _3asyD.Mesh = function(name, shaderType, objects) {
 	}
 	this.NAME = name;
 };
+
 _3asyD.Mesh.prototype = _3asyD;
 _3asyD.Mesh.prototype.constructor = _3asyD.Mesh;
 _3asyD.Mesh.prototype.addShape = function(object) {
@@ -515,140 +524,179 @@ _3asyD.Mesh.prototype.loadShaderVariables = function() {
 		console.log(this);
 
 	};
+_3asyD.Mesh.prototype.readyForDraw = function() {
+	this.MESH_VERTICIES = this.OBJECTS[0].VERTICIES.slice();
+	this.MESH_FACES = this.OBJECTS[0].FACES.slice();
+	this.MESH_NORMALS = this.OBJECTS[0].NORMALS.slice();
+	this.MESH_COLOR = this.OBJECTS[0].COLOR.slice();
+	this.MESH_INDICIES = this.OBJECTS[0].INDICIES;
+	var currentMax = (this.OBJECTS[0].VERTICIES.length)/3;
+	for(var i = 1; i < this.OBJECTS.length; ++i) {
+		var tempFaces = this.OBJECTS[i].FACES.slice();
+		_3asyD.extend(this.MESH_FACES,tempFaces,currentMax);
+		_3asyD.extend(this.MESH_VERTICIES,this.OBJECTS[i].VERTICIES);
+		_3asyD.extend(this.MESH_NORMALS,this.OBJECTS[i].NORMALS);
+		_3asyD.extend(this.MESH_COLOR,this.OBJECTS[i].COLOR);
+		this.MESH_INDICIES+=this.OBJECTS[i].INDICIES;
+		currentMax += ((this.OBJECTS[i].VERTICIES.length)/3);
+	}
+	var GL = this.gl;
+	this.VERTEX_BUFFER = GL.createBuffer();
+	GL.bindBuffer(GL.ARRAY_BUFFER,this.VERTEX_BUFFER);
+	GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(this.MESH_VERTICIES),GL.STATIC_DRAW);
+	this.FACE_BUFFER = GL.createBuffer();
+	GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,this.FACE_BUFFER);
+	GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,new Uint16Array(this.MESH_FACES),GL.STATIC_DRAW);
+	this.NORMAL_BUFFER = GL.createBuffer();
+	GL.bindBuffer(GL.ARRAY_BUFFER,this.NORMAL_BUFFER);
+	GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_NORMALS),GL.STATIC_DRAW);
+	this.COLOR_BUFFER = GL.createBuffer();
+	GL.bindBuffer(GL.ARRAY_BUFFER,this.COLOR_BUFFER);
+	GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_COLOR),GL.STATIC_DRAW);
+};
+
+_3asyD.Mesh.prototype.setDrawType = function(typeString) { 
+	try {
+		var GL = this.gl;
+		this.DRAWTYPE = GL[typeString];
+	}
+	catch(err) {
+		console.error(err);
+		return false;
+	}
+};
 
 
-	_3asyD.Cube = function Cube(length,width,height,colorScheme,color_s) {
-		_3asyD.Shape.call(this);
-		var l = length/2;
-		var w = width/2;
-		var h = height/2;
-		this.CHILDREN = [];
-		this.INDICIES = 36;
-		this.LENGTH = length;
-		this.WIDTH = width;
-		this.HEIGHT = height;
-		this.DRAWTYPE = _3asyD.gl.TRIANGLES;
-		this.VERTICIES = [  
-			-1*l,-1*w,-1*h,   
-			1*l,-1*w,-1*h,     
-			1*l, 1*w,-1*h,     
-			-1*l, 1*w,-1*h,     
+_3asyD.Cube = function Cube(length,width,height,colorScheme,color_s) {
+	_3asyD.Shape.call(this);
+	var l = length/2;
+	var w = width/2;
+	var h = height/2;
+	this.CHILDREN = [];
+	this.INDICIES = 36;
+	this.LENGTH = length;
+	this.WIDTH = width;
+	this.HEIGHT = height;
+	this.VERTICIES = [  
+		-1*l,-1*w,-1*h,   
+		1*l,-1*w,-1*h,     
+		1*l, 1*w,-1*h,     
+		-1*l, 1*w,-1*h,     
 
-			-1*l,-1*w, 1*h,    
-			1*l,-1*w, 1*h,    
-			1*l, 1*w, 1*h,     
-			-1*l, 1*w, 1*h,     
+		-1*l,-1*w, 1*h,    
+		1*l,-1*w, 1*h,    
+		1*l, 1*w, 1*h,     
+		-1*l, 1*w, 1*h,     
 
-			-1*l,-1*w,-1*h,     
-			-1*l, 1*w,-1*h,     
-			-1*l, 1*w, 1*h,    
-			-1*l,-1*w, 1*h,    
+		-1*l,-1*w,-1*h,     
+		-1*l, 1*w,-1*h,     
+		-1*l, 1*w, 1*h,    
+		-1*l,-1*w, 1*h,    
 
-			1*l,-1*w,-1*h,     
-			1*l, 1*w,-1*h,     
-			1*l, 1*w, 1*h,     
-			1*l,-1*w, 1*h,     
+		1*l,-1*w,-1*h,     
+		1*l, 1*w,-1*h,     
+		1*l, 1*w, 1*h,     
+		1*l,-1*w, 1*h,     
 
-			-1*l,-1*w,-1*h,     
-			-1*l,-1*w, 1*h,     
-			1*l,-1*w, 1*h,    
-			1*l,-1*w,-1*h,     
+		-1*l,-1*w,-1*h,     
+		-1*l,-1*w, 1*h,     
+		1*l,-1*w, 1*h,    
+		1*l,-1*w,-1*h,     
 
-			-1*l, 1*w,-1*h,   
-			-1*l, 1*w, 1*h,    
-			1*l, 1*w, 1*h,    
-			1*l, 1*w,-1*h,    
-	    ];
+		-1*l, 1*w,-1*h,   
+		-1*l, 1*w, 1*h,    
+		1*l, 1*w, 1*h,    
+		1*l, 1*w,-1*h,    
+    ];
 
-		this.FACES = [    
-			0,1,2,
-			0,2,3,
+	this.FACES = [    
+		0,1,2,
+		0,2,3,
 
-			4,5,6,
-			4,6,7,
+		4,5,6,
+		4,6,7,
 
-			8,9,10,
-			8,10,11,
+		8,9,10,
+		8,10,11,
 
-			12,13,14,
-			12,14,15,
+		12,13,14,
+		12,14,15,
 
-			16,17,18,
-			16,18,19,
+		16,17,18,
+		16,18,19,
 
-			20,21,22,
-			20,22,23
-	    ];
-		
-		this.NORMALS = [
-		//BOTTOM
-		0,0,-1,
-		0,0,-1,
-		0,0,-1,
-		0,0,-1,
-		//TOP
+		20,21,22,
+		20,22,23
+    ];
+	
+	this.NORMALS = [
+	//BOTTOM
+	0,0,-1,
+	0,0,-1,
+	0,0,-1,
+	0,0,-1,
+	//TOP
+	0,0,1,
+	0,0,1,
+	0,0,1,
+	0,0,1,
+	//BACK
+	-1,0,0,
+	-1,0,0,
+	-1,0,0,
+	-1,0,0,
+	//FRONT
+	1,0,0,
+	1,0,0,
+	1,0,0,
+	1,0,0,
+	//LEFT
+	0,-1,0,
+	0,-1,0,
+	0,-1,0,
+	0,-1,0,
+	//RIGHT		
+	0,1,0,
+	0,1,0,
+	0,1,0,
+	0,1,0
+	];
+
+	this.COLOR = [ 
+		1,1,0,
+		1,1,0,
+		1,1,0,
+		1,1,0,
+
 		0,0,1,
 		0,0,1,
 		0,0,1,
 		0,0,1,
-		//BACK
-		-1,0,0,
-		-1,0,0,
-		-1,0,0,
-		-1,0,0,
-		//FRONT
+
+		0,1,1,
+		0,1,1,
+		0,1,1,
+		0,1,1,
+
 		1,0,0,
 		1,0,0,
 		1,0,0,
 		1,0,0,
-		//LEFT
-		0,-1,0,
-		0,-1,0,
-		0,-1,0,
-		0,-1,0,
-		//RIGHT		
+
+		1,0,1,
+		1,0,1,
+		1,0,1,
+		1,0,1,
+
 		0,1,0,
 		0,1,0,
 		0,1,0,
 		0,1,0
-		];
+    ];
+};
 
-		this.COLOR = [ 
-			1,1,0,
-			1,1,0,
-			1,1,0,
-			1,1,0,
-
-			0,0,1,
-			0,0,1,
-			0,0,1,
-			0,0,1,
-
-			0,1,1,
-			0,1,1,
-			0,1,1,
-			0,1,1,
-
-			1,0,0,
-			1,0,0,
-			1,0,0,
-			1,0,0,
-
-			1,0,1,
-			1,0,1,
-			1,0,1,
-			1,0,1,
-
-			0,1,0,
-			0,1,0,
-			0,1,0,
-			0,1,0
-        ];
-        this.bufferSetUp();
-	};
-
-	_3asyD.Cube.prototype = Object.create(_3asyD.Shape.prototype);
-	_3asyD.Cube.prototype.constructor = _3asyD.Cube;
+_3asyD.Cube.prototype = Object.create(_3asyD.Shape.prototype);
+_3asyD.Cube.prototype.constructor = _3asyD.Cube;
 
 
 
