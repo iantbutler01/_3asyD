@@ -92,6 +92,37 @@ _3asyD = {
 		return vector;
 	},
 
+	matrixMultiply: function(matrix1,matrix2,dim1,dim2) {
+		var result = [];
+		var sum = 0;
+		var place = 0;
+		var shift = 0;
+		var test = 0;
+		for(var j = 0;;) {
+			if(test >= 1000) break;
+			else ++test;
+			if(result.length%dim2[1] == 0 && (result.length != 1 || (result.length-dim2[1]) == 0) && result.length != 0) {
+				++j;
+				if(j >= dim1[1]) break;
+				place = 0;
+				shift = (dim1[0]*j);
+			}
+			for(var i = 0; i < dim1[0]; ++i) {
+				sum+=matrix1[i+shift]*(matrix2[place+(i*dim2[1])]);
+				if((i+1)%dim1[0] == 0 && (i+1)!=1) {
+					console.log(sum);
+					console.log("t---b");
+					console.log(test);
+					console.log("t---e");
+					place+=1;
+					result.push(sum);
+					sum = 0;
+				}
+			}
+		}
+		return result;
+	},
+
 
 	translateXYZ: function(matrix, x,y,z){
 		matrix[12]+=x;
@@ -404,16 +435,13 @@ _3asyD.Shape.prototype.move = function(x,y,z) {
 		this.VERTICIES[i+2] += z;
 	}
 }; 
-_3asyD.Shape.prototype.rotateX = function() {
+_3asyD.Shape.prototype.rotate = function(angleX,angleY,angleZ) {
 
-}
-_3asyD.Shape.prototype.rotateY = function() {
+	var rotationMatrix = [
 
-}
-_3asyD.Shape.prototype.rotateZ = function() {
+	]
 
-}
-
+};
 _3asyD.Stage = function(name, viewport, meshes) {
 	this.VMATRIX = _3asyD.getI4();
 	this.MESHES = [];
@@ -423,7 +451,7 @@ _3asyD.Stage = function(name, viewport, meshes) {
 	}
 	this.NAME = name;
 	this.VIEWPORT = viewport;
-}
+};
 _3asyD.Stage.prototype = _3asyD;
 _3asyD.Stage.prototype.constructor = _3asyD.Stage;
 _3asyD.Stage.prototype.add = function(mesh) {
@@ -431,7 +459,7 @@ _3asyD.Stage.prototype.add = function(mesh) {
 	if((typeof this.MESHES) == 'undefined') { this.MESHES = [mesh]; 
 	}
 	else { this.MESHES.push(mesh); }
-}
+};
 _3asyD.Stage.prototype.setPerspectiveCamera = function(angle, a, zMax, zMin) {
 		var tan = Math.tan(_3asyD.dtor(0.5*angle));
 		var A = -(zMax+zMin)/(zMax-zMin);
@@ -448,6 +476,7 @@ _3asyD.Stage.prototype.setPerspectiveCamera = function(angle, a, zMax, zMin) {
 _3asyD.Mesh = function(name, shaderType, objects) {
 	this.MMATRIX = _3asyD.getI4();
 	this.DRAWTYPE = _3asyD.gl.TRIANGLES;
+	this.bufferSet = false;
 	if(typeof objects != 'undefined') {
 		this.OBJECTS = objects;
 
@@ -540,19 +569,22 @@ _3asyD.Mesh.prototype.readyForDraw = function() {
 		this.MESH_INDICIES+=this.OBJECTS[i].INDICIES;
 		currentMax += ((this.OBJECTS[i].VERTICIES.length)/3);
 	}
-	var GL = this.gl;
-	this.VERTEX_BUFFER = GL.createBuffer();
-	GL.bindBuffer(GL.ARRAY_BUFFER,this.VERTEX_BUFFER);
-	GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(this.MESH_VERTICIES),GL.STATIC_DRAW);
-	this.FACE_BUFFER = GL.createBuffer();
-	GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,this.FACE_BUFFER);
-	GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,new Uint16Array(this.MESH_FACES),GL.STATIC_DRAW);
-	this.NORMAL_BUFFER = GL.createBuffer();
-	GL.bindBuffer(GL.ARRAY_BUFFER,this.NORMAL_BUFFER);
-	GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_NORMALS),GL.STATIC_DRAW);
-	this.COLOR_BUFFER = GL.createBuffer();
-	GL.bindBuffer(GL.ARRAY_BUFFER,this.COLOR_BUFFER);
-	GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_COLOR),GL.STATIC_DRAW);
+	if(this.bufferSet == false) {
+		var GL = this.gl;
+		this.VERTEX_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ARRAY_BUFFER,this.VERTEX_BUFFER);
+		GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(this.MESH_VERTICIES),GL.STATIC_DRAW);
+		this.FACE_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,this.FACE_BUFFER);
+		GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,new Uint16Array(this.MESH_FACES),GL.STATIC_DRAW);
+		this.NORMAL_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ARRAY_BUFFER,this.NORMAL_BUFFER);
+		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_NORMALS),GL.STATIC_DRAW);
+		this.COLOR_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ARRAY_BUFFER,this.COLOR_BUFFER);
+		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_COLOR),GL.STATIC_DRAW);
+		this.bufferSet = true;
+	}
 };
 
 _3asyD.Mesh.prototype.setDrawType = function(typeString) { 
