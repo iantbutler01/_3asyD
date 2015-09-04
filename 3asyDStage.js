@@ -1,5 +1,6 @@
 _3asyD.Stage = function(name, viewport, meshes) {
 	var proto = this.prototype;
+	this.VMATRIX = _3asyD.getI4();
 	if(typeof meshes !== undefined) {
 		this.MESHES = meshes;
 

@@ -68,16 +68,20 @@ _3asyD.Mesh.prototype.loadShaderVariables = function() {
 		}
 	};
 _3asyD.Mesh.prototype.readyForDraw = function() {
-	this.MESH_VERTICIES = this.OBJECTS[0].VERTICIES.slice();
+	this.MESH_VERTICIES = this.OBJECTS[0].
+	E
+	 RTICIES.slice();
 	this.MESH_FACES = this.OBJECTS[0].FACES.slice();
 	this.MESH_NORMALS = this.OBJECTS[0].NORMALS.slice();
 	this.MESH_COLOR = this.OBJECTS[0].COLOR.slice();
+	this.MESH_INDICIES = this.OBJECTS[0].INDICIES;
 	var currentMax = (this.OBJECTS[0].VERTICIES.length)/3;
 	for(var i = 1; i < this.OBJECTS.length; ++i) {
 		var tempFaces = this.OBJECTS[i].FACES.slice();
 		_3asyD.extend(this.MESH_FACES,tempFaces,currentMax);
 		_3asyD.extend(this.MESH_VERTICIES,this.OBJECTS[i].VERTICIES);
 		_3asyD.extend(this.MESH_NORMALS,this.OBJECTS[i].NORMALS);
+		this.MESH_INDICIES+=this.OBJECTS[i].INDICIES;
 		currentMax = (this.OBJECTS[i].VERTICIES.length)/3;
 	}
 

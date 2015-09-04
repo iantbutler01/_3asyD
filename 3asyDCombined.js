@@ -2,6 +2,7 @@ var PI = Math.PI;
 _3asyD = {
 	gl: null,
 	programs: [],
+	canvas: null,
 
 
 	dtor: function(deg) {
@@ -58,6 +59,87 @@ _3asyD = {
 		m[9]=c*m[9]+s*mv8;
 	},
 
+	compareApproximate: function(matrix,value,controlType,operatorType,tolerance,indicies) {
+		var booleanReturnValue = null;
+		var indicieLength = null;
+		if (typeof indicies == 'undefined') {
+			if(controlType == 'SPECIFIC'){ 
+				console.error('Control type set to specific but no indicies given.');
+				return;
+			}
+			indicies = matrix.length;
+			indicieLength = matrix.length;
+		}
+		else indicieLength = indicies.length;
+		if(typeof tolerance == 'undefined') {
+			tolerance = 0;
+		}
+		if(typeof controlType == 'undefined') {
+			controlType = 'MATCH_ALL';
+		}
+		var operatorFunction = function(a,b) {
+			switch(operatorType) {
+				case ">": 
+					if(a > b-tolerance) return true;
+					else return false;
+					break;
+				case "<": 
+					if(a < b+tolerance) return true;
+					else return false;
+					break;
+				case ">=":
+					if(a > b-tolerance || b-tolerance < a < b+tolerance) return true;
+					else return false;
+					break;
+				case "<=": 
+					if(a < b+tolerance ||  b-tolerance < a < b+tolerance) return true;
+					else return false;
+					break;
+				case "==":
+					if(b-tolerance < a && a < b+tolerance) return true;
+					else return false;
+					break;
+			}
+			
+		}
+		if(controlType == 'ONE_FOR_ALL') booleanReturnValue = false;
+		else booleanReturnValue = [];
+		for(var i = 0; i < indicieLength; ++i) {
+			if(controlType == 'ONE_FOR_ALL') {
+				if(operatorFunction(matrix[i],value) == true) return true;
+			}
+			else {
+				if(controlType == 'SPECIFIC') {
+					booleanReturnValue.push(operatorFunction(matrix[indicies[i]],value));
+				}
+				else booleanReturnValue.push(operatorFunction(matrix[i],value));
+			}
+		}
+		var numTrue = 0;
+		var numFalse = 0;
+		for(var i = 0; i < booleanReturnValue.length; ++i) {
+			if(booleanReturnValue[i] == true) ++numTrue;
+			else ++numFalse;	
+		}
+		if(controlType == 'MAJORITY_CALL') {
+			if(numTrue > numFalse) return true;
+			else return false; 
+		}
+		if(controlType == 'MINORITY_CALL') {
+			if(numTrue < numFalse) return true;
+			else return false; 
+		}
+		if(controlType == 'MATCH_ALL') if(numTrue == indicies.length) return true;
+		if(controlType == 'SPECIFIC') {
+			var tempBoolean = booleanReturnValue[0];
+			for(var i = 1; i < indicieLength; ++i) {
+				tempBoolean = tempBoolean & booleanReturnValue[i];
+			}
+			return tempBoolean
+		}
+		return false;
+	},
+
 	crossProduct: function(v1,v2) {
 		try {
 			if(v1.length > 3 || v2.length > 3) {
@@ -88,7 +170,6 @@ _3asyD = {
 		for(var i =  0; i < vector.length; ++i) {
 			vector[i] *= scalar;
 		}
-		console.log(vector);
 		return vector;
 	},
 
@@ -110,10 +191,9 @@ _3asyD = {
 			for(var i = 0; i < dim1[0]; ++i) {
 				sum+=matrix1[i+shift]*(matrix2[place+(i*dim2[1])]);
 				if((i+1)%dim1[0] == 0 && (i+1)!=1) {
-					console.log(sum);
-					console.log("t---b");
-					console.log(test);
-					console.log("t---e");
+					//console.log("t---b");
+					//console.log(test);
+					//console.log("t---e");
 					place+=1;
 					result.push(sum);
 					sum = 0;
@@ -134,6 +214,7 @@ _3asyD = {
 
 	setGL: function(id) {
 		try {
+			this.canvas = document.getElementById(id);
 			this.gl = document.getElementById(id).getContext('experimental-webgl');
 			this.VMATRIX = this.getI4();
 
@@ -160,9 +241,11 @@ _3asyD = {
 			newHexValue = hexValue.charAt(1)+hexValue.charAt(1)+hexValue.charAt(2)+hexValue.charAt(2)+hexValue.charAt(3)+hexValue.charAt(3);
 		}
 		else newHexValue = hexValue.charAt(1)+hexValue.charAt(2)+hexValue.charAt(3)+hexValue.charAt(4)+hexValue.charAt(5)+hexValue.charAt(6);
+		console.log(newHexValue);
 		var r = parseInt(newHexValue.charAt(0)+newHexValue.charAt(1),16);
 		var g = parseInt(newHexValue.charAt(2)+newHexValue.charAt(3),16);
 		var b = parseInt(newHexValue.charAt(4)+newHexValue.charAt(5),16);
+		console.log(r,g,b);
 		//(r/255,g/255,b/255);
 		return [r/255,g/255,b/255];
 	},
@@ -189,7 +272,14 @@ _3asyD = {
 	drawStage: function(stage) { //,glOptionsList
 		var GL = this.gl;
 		var attributes = this.ATTRIBUTES;
+		var canvas = this.canvas;
 		try {
+			var displayWidth  = canvas.clientWidth;
+			var displayHeight = canvas.clientHeight;
+			if (canvas.width  != displayWidth || canvas.height != displayHeight) {
+				canvas.width  = displayWidth;
+				canvas.height = displayHeight;
+			}
 			GL.enable(GL.DEPTH_TEST); //MOVE OPTIONS TO ENABLE/DISABLE system per each draw.
 			GL.depthFunc(GL.LEQUAL);
 			GL.clearColor(0.0,0.0,0.0,0.0);
@@ -413,20 +503,43 @@ _3asyD.Shader.prototype.phong = function() {
 	}
 };
 	
-_3asyD.Shape =  function () {
+_3asyD.Shape =  function (type,color_s,indicies) {
 		this.CHILDREN = [];
-		this.INDICIES = null;
+		this.INDICIES = indicies;
 		this.VERTICIES = [];
 		this.NORMALS = [];
 		this.FACE_UV = [];
 		this.FACES = [];
 		this.COLOR = [];
+		this.setColor(color_s);
+		this.type = type;
 		this.DRAWTYPE = this.gl.TRIANGLES;
 		
 	};
 _3asyD.Shape.prototype = _3asyD;
-_3asyD.Shape.prototype.constructor = _3asyD.Shape
+_3asyD.Shape.prototype.constructor = _3asyD.Shape;
 
+_3asyD.Shape.prototype.setColor = function(color_s) {
+	var color = [];
+	var colorCounter = 0;
+	for(var i = 0; i < color_s.length; ++i) {
+		color.push(_3asyD.hexToGLRGB(color_s[i]));
+	}
+	var updateSeries = Math.floor(this.INDICIES/color_s.length)-1;
+	for(var i = 0; i < this.INDICIES; ++i) {
+		if(color_s.length == 1) {
+
+			this.COLOR.push(color[0][0],color[0][1],color[0][2]);
+		}
+		else if(i <= updateSeries) {
+			this.COLOR.push(color[colorCounter][0],color[colorCounter][1],color[colorCounter][2])
+			if(i == updateSeries) {
+				++colorCounter;
+				updateSeries = updateSeries*(colorCounter+1);
+			}
+		} 
+	}
+};
 
 _3asyD.Shape.prototype.move = function(x,y,z) {
 	for(var i = 0; i < this.VERTICIES.length; i+=3) {
@@ -550,7 +663,6 @@ _3asyD.Mesh.prototype.loadShaderVariables = function() {
 			//(attributes[attributeNameArray[i]]);
 			GL.enableVertexAttribArray(this.ATTRIBUTES[attributeNameArray[i]]);
 		}
-		console.log(this);
 
 	};
 _3asyD.Mesh.prototype.readyForDraw = function() {
@@ -599,13 +711,12 @@ _3asyD.Mesh.prototype.setDrawType = function(typeString) {
 };
 
 
-_3asyD.Cube = function Cube(length,width,height,colorScheme,color_s) {
-	_3asyD.Shape.call(this);
+_3asyD.Cube = function Cube(length,width,height,color_s) {
+	_3asyD.Shape.call(this,'CUBE',color_s,36);
 	var l = length/2;
 	var w = width/2;
 	var h = height/2;
 	this.CHILDREN = [];
-	this.INDICIES = 36;
 	this.LENGTH = length;
 	this.WIDTH = width;
 	this.HEIGHT = height;
@@ -693,38 +804,6 @@ _3asyD.Cube = function Cube(length,width,height,colorScheme,color_s) {
 	0,1,0,
 	0,1,0
 	];
-
-	this.COLOR = [ 
-		1,1,0,
-		1,1,0,
-		1,1,0,
-		1,1,0,
-
-		0,0,1,
-		0,0,1,
-		0,0,1,
-		0,0,1,
-
-		0,1,1,
-		0,1,1,
-		0,1,1,
-		0,1,1,
-
-		1,0,0,
-		1,0,0,
-		1,0,0,
-		1,0,0,
-
-		1,0,1,
-		1,0,1,
-		1,0,1,
-		1,0,1,
-
-		0,1,0,
-		0,1,0,
-		0,1,0,
-		0,1,0
-    ];
 };
 
 _3asyD.Cube.prototype = Object.create(_3asyD.Shape.prototype);
