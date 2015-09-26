@@ -82,23 +82,18 @@ _3asyD = {
 				case ">": 
 					if(a > b-tolerance) return true;
 					else return false;
-					break;
 				case "<": 
 					if(a < b+tolerance) return true;
 					else return false;
-					break;
 				case ">=":
 					if(a > b-tolerance || b-tolerance < a < b+tolerance) return true;
 					else return false;
-					break;
 				case "<=": 
 					if(a < b+tolerance ||  b-tolerance < a < b+tolerance) return true;
 					else return false;
-					break;
 				case "==":
 					if(b-tolerance < a && a < b+tolerance) return true;
 					else return false;
-					break;
 			}
 			
 		}
@@ -585,12 +580,21 @@ _3asyD.Stage.prototype.setPerspectiveCamera = function(angle, a, zMax, zMin) {
 		]
 };
 
+_3asyD.Stage.prototype.setOrthographicCamera = function(width,height,zMax,zMin) {
+	this.CAMERA = [
+	(1/(width)),0,0,0,
+	0,(1/(height)),0,0,
+	0,0,(-2/(zMax-zMin)),0,
+	0,0,0,1
+	]
+
+}
+
 
 _3asyD.Mesh = function(name, shaderType, objects) {
 	this.MMATRIX = _3asyD.getI4();
 	this.DRAWTYPE = _3asyD.gl.TRIANGLES;
 	this.bufferSet = false;
-	this.READY = false;
 	if(typeof objects != 'undefined') {
 		this.OBJECTS = objects;
 
@@ -667,46 +671,37 @@ _3asyD.Mesh.prototype.loadShaderVariables = function() {
 
 	};
 _3asyD.Mesh.prototype.readyForDraw = function() {
-	if(this.READY == true) return;
-	try {
-		this.MESH_VERTICIES = this.OBJECTS[0].VERTICIES.slice();
-		this.MESH_FACES = this.OBJECTS[0].FACES.slice();
-		this.MESH_NORMALS = this.OBJECTS[0].NORMALS.slice();
-		this.MESH_COLOR = this.OBJECTS[0].COLOR.slice();
-		this.MESH_INDICIES = this.OBJECTS[0].INDICIES;
-		var currentMax = (this.OBJECTS[0].VERTICIES.length)/3;
-		for(var i = 1; i < this.OBJECTS.length; ++i) {
-			var tempFaces = this.OBJECTS[i].FACES.slice();
-			_3asyD.extend(this.MESH_FACES,tempFaces,currentMax);
-			_3asyD.extend(this.MESH_VERTICIES,this.OBJECTS[i].VERTICIES);
-			_3asyD.extend(this.MESH_NORMALS,this.OBJECTS[i].NORMALS);
-			_3asyD.extend(this.MESH_COLOR,this.OBJECTS[i].COLOR);
-			this.MESH_INDICIES+=this.OBJECTS[i].INDICIES;
-			currentMax += ((this.OBJECTS[i].VERTICIES.length)/3);
-		}
-		if(this.bufferSet == false) {
-			var GL = this.gl;
-			this.VERTEX_BUFFER = GL.createBuffer();
-			GL.bindBuffer(GL.ARRAY_BUFFER,this.VERTEX_BUFFER);
-			GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(this.MESH_VERTICIES),GL.STATIC_DRAW);
-			this.FACE_BUFFER = GL.createBuffer();
-			GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,this.FACE_BUFFER);
-			GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,new Uint16Array(this.MESH_FACES),GL.STATIC_DRAW);
-			this.NORMAL_BUFFER = GL.createBuffer();
-			GL.bindBuffer(GL.ARRAY_BUFFER,this.NORMAL_BUFFER);
-			GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_NORMALS),GL.STATIC_DRAW);
-			this.COLOR_BUFFER = GL.createBuffer();
-			GL.bindBuffer(GL.ARRAY_BUFFER,this.COLOR_BUFFER);
-			GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_COLOR),GL.STATIC_DRAW);
-			this.bufferSet = true;
-		}
-		this.READY = true;
+	this.MESH_VERTICIES = this.OBJECTS[0].VERTICIES.slice();
+	this.MESH_FACES = this.OBJECTS[0].FACES.slice();
+	this.MESH_NORMALS = this.OBJECTS[0].NORMALS.slice();
+	this.MESH_COLOR = this.OBJECTS[0].COLOR.slice();
+	this.MESH_INDICIES = this.OBJECTS[0].INDICIES;
+	var currentMax = (this.OBJECTS[0].VERTICIES.length)/3;
+	for(var i = 1; i < this.OBJECTS.length; ++i) {
+		var tempFaces = this.OBJECTS[i].FACES.slice();
+		_3asyD.extend(this.MESH_FACES,tempFaces,currentMax);
+		_3asyD.extend(this.MESH_VERTICIES,this.OBJECTS[i].VERTICIES);
+		_3asyD.extend(this.MESH_NORMALS,this.OBJECTS[i].NORMALS);
+		_3asyD.extend(this.MESH_COLOR,this.OBJECTS[i].COLOR);
+		this.MESH_INDICIES+=this.OBJECTS[i].INDICIES;
+		currentMax += ((this.OBJECTS[i].VERTICIES.length)/3);
 	}
-	catch(err) {
-		console.error(err);
-		return false;
+	if(this.bufferSet == false) {
+		var GL = this.gl;
+		this.VERTEX_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ARRAY_BUFFER,this.VERTEX_BUFFER);
+		GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(this.MESH_VERTICIES),GL.STATIC_DRAW);
+		this.FACE_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,this.FACE_BUFFER);
+		GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,new Uint16Array(this.MESH_FACES),GL.STATIC_DRAW);
+		this.NORMAL_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ARRAY_BUFFER,this.NORMAL_BUFFER);
+		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_NORMALS),GL.STATIC_DRAW);
+		this.COLOR_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ARRAY_BUFFER,this.COLOR_BUFFER);
+		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_COLOR),GL.STATIC_DRAW);
+		this.bufferSet = true;
 	}
-	
 };
 
 _3asyD.Mesh.prototype.setDrawType = function(typeString) { 
