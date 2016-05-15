@@ -82,23 +82,18 @@ _3asyD = {
 				case ">": 
 					if(a > b-tolerance) return true;
 					else return false;
-					break;
 				case "<": 
 					if(a < b+tolerance) return true;
 					else return false;
-					break;
 				case ">=":
 					if(a > b-tolerance || b-tolerance < a < b+tolerance) return true;
 					else return false;
-					break;
 				case "<=": 
 					if(a < b+tolerance ||  b-tolerance < a < b+tolerance) return true;
 					else return false;
-					break;
 				case "==":
 					if(b-tolerance < a && a < b+tolerance) return true;
 					else return false;
-					break;
 			}
 			
 		}
@@ -241,11 +236,9 @@ _3asyD = {
 			newHexValue = hexValue.charAt(1)+hexValue.charAt(1)+hexValue.charAt(2)+hexValue.charAt(2)+hexValue.charAt(3)+hexValue.charAt(3);
 		}
 		else newHexValue = hexValue.charAt(1)+hexValue.charAt(2)+hexValue.charAt(3)+hexValue.charAt(4)+hexValue.charAt(5)+hexValue.charAt(6);
-		console.log(newHexValue);
 		var r = parseInt(newHexValue.charAt(0)+newHexValue.charAt(1),16);
 		var g = parseInt(newHexValue.charAt(2)+newHexValue.charAt(3),16);
 		var b = parseInt(newHexValue.charAt(4)+newHexValue.charAt(5),16);
-		console.log(r,g,b);
 		//(r/255,g/255,b/255);
 		return [r/255,g/255,b/255];
 	},
@@ -311,43 +304,7 @@ _3asyD = {
 		}
 	},
 
-	Sphere: function Sphere(radiusX,radiusY,radiusZ,smoothX,smoothY) {
-		// x = psinPHIcosTHETA, y = psinPHIsinTHETA z=pcosPHI
-		// p is a quick reference to the greek symbol rho,
-		// often used in the spherical coordinate system to denote 3 dimensional radii.
-		var pX = radiusX;
-		var pY = radiusY;
-		var pZ = radiusZ;
-		var sX = smoothX;
-		var sY = smoothY;
-		this.CHILDREN = [];
-		this.VERTICIES = [];
-		this.NORMALS = [];
-		this.COLOR = [];
-		this.MATERIAL = "FLAT"; //remove
-		this.MMATRIX = _3asyD.getI4(); //remove
-		this.INDICIES = smoothX*smoothY*6;
-		this.DRAWTYPE = _3asyD.gl.TRIANGLES; //remove
-		for(var i =  0; i <= PI; i+=(PI/sY)) {
-			for(j = 0; j <= 2*PI; j+=((2*PI)/sX)) {
-				var x = Math.sin(i)*Math.cos(j);
-				var y = Math.sin(i)*Math.sin(j);
-				var z = Math.cos(i);
-				this.NORMALS.push(x,y,z);
-				this.VERTICIES.push(pX*x,pY*y,pZ*z);
-			}
-		}
-		this.FACES = [];
-		for(var i =  0; i < smoothY; ++i) {
-			for(j = 0; j < smoothX; ++j) {
-				var one = (i*(smoothX+1))+j;
-				var two = one+smoothX+1;
-				this.FACES.push(one,two,one+1);
-				this.FACES.push(two,two+1,one+1);
-			}
-		}
 	
-	},
 
 	Cone: function Cone() {
 
@@ -512,7 +469,6 @@ _3asyD.Shape =  function (type,color_s,indicies) {
 		this.FACES = [];
 		this.COLOR = [];
 		this.setColor(color_s);
-		this.PARENT_MESH = null;
 		this.type = type;
 		this.DRAWTYPE = this.gl.TRIANGLES;
 		
@@ -521,16 +477,23 @@ _3asyD.Shape.prototype = _3asyD;
 _3asyD.Shape.prototype.constructor = _3asyD.Shape;
 
 _3asyD.Shape.prototype.setColor = function(color_s) {
+	if(typeof color_s === 'undefined') color_s="#111111";
 	var color = [];
 	var colorCounter = 0;
-	for(var i = 0; i < color_s.length; ++i) {
-		color.push(_3asyD.hexToGLRGB(color_s[i]));
+	if( typeof color_s === 'string' ) {
+		color.push(_3asyD.hexToGLRGB(color_s))
+	}
+	else {
+		for(var i = 0; i < color_s.length; ++i) {
+			color.push(_3asyD.hexToGLRGB(color_s[i]));
+		}
 	}
 	var updateSeries = Math.floor(this.INDICIES/color_s.length)-1;
 	for(var i = 0; i < this.INDICIES; ++i) {
-		if(color_s.length == 1) {
+		if(color.length == 1) {
 
 			this.COLOR.push(color[0][0],color[0][1],color[0][2]);
+			
 		}
 		else if(i <= updateSeries) {
 			this.COLOR.push(color[colorCounter][0],color[colorCounter][1],color[colorCounter][2])
@@ -539,6 +502,7 @@ _3asyD.Shape.prototype.setColor = function(color_s) {
 				updateSeries = updateSeries*(colorCounter+1);
 			}
 		} 
+		//
 	}
 };
 
@@ -575,7 +539,7 @@ _3asyD.Stage.prototype.add = function(mesh) {
 	else { this.MESHES.push(mesh); }
 };
 _3asyD.Stage.prototype.setPerspectiveCamera = function(angle, a, zMax, zMin) {
-		var tan = Math.tan(_3asyD.dtor(0.5*angle));
+		var tan = Math.tan(_3asyD.dtor(angle));
 		var A = -(zMax+zMin)/(zMax-zMin);
 		var B = (-2*zMax*zMin)/(zMax-zMin)
 		this.CAMERA = [
@@ -586,12 +550,22 @@ _3asyD.Stage.prototype.setPerspectiveCamera = function(angle, a, zMax, zMin) {
 		]
 };
 
+_3asyD.Stage.prototype.setOrthographicCamera = function(scale,width,height,zMax,zMin) {
+	var s = scale;
+	this.CAMERA = [
+	((s*1)/(width*0.5)),0,0,0,
+	0,((s*1)/(height*0.5)),0,0,
+	0,0,((s*1)/(zMax-zMin)),0,
+	0,0,0,1
+	];
+
+}
+
 
 _3asyD.Mesh = function(name, shaderType, objects) {
 	this.MMATRIX = _3asyD.getI4();
 	this.DRAWTYPE = _3asyD.gl.TRIANGLES;
 	this.bufferSet = false;
-	this.READY = false;
 	if(typeof objects != 'undefined') {
 		this.OBJECTS = objects;
 
@@ -611,12 +585,10 @@ _3asyD.Mesh = function(name, shaderType, objects) {
 _3asyD.Mesh.prototype = _3asyD;
 _3asyD.Mesh.prototype.constructor = _3asyD.Mesh;
 _3asyD.Mesh.prototype.addShape = function(object) {
-	object.PARENT_MESH = this.NAME;
 	if(typeof this.OBJECTS == 'undefined') { this.OBJECTS = [object]; 
 	}
 	else { this.OBJECTS.push(object) };
 };
-
 _3asyD.Mesh.prototype.setShader = function(shader) {
 	try {
 		this.SHADER = shader;
@@ -627,6 +599,8 @@ _3asyD.Mesh.prototype.setShader = function(shader) {
 		console.error(err);
 	}
 };
+
+
 _3asyD.Mesh.prototype.setLight = function(typeStringList,colorList,gloss,directionVector) {
 	try {
 		var GL = this.gl;
@@ -649,6 +623,7 @@ _3asyD.Mesh.prototype.setLight = function(typeStringList,colorList,gloss,directi
 };
 
 _3asyD.Mesh.prototype.loadShaderVariables = function() {
+
 		var GL = this.gl;
 		var currentProgram = this.SHADER.SHADER_PROGRAM;
 		var uniformNamesArray = this.SHADER.UNIFORMS;
@@ -670,46 +645,39 @@ _3asyD.Mesh.prototype.loadShaderVariables = function() {
 
 	};
 _3asyD.Mesh.prototype.readyForDraw = function() {
-	if(this.READY == true) return;
-	try {
-		this.MESH_VERTICIES = this.OBJECTS[0].VERTICIES.slice();
-		this.MESH_FACES = this.OBJECTS[0].FACES.slice();
-		this.MESH_NORMALS = this.OBJECTS[0].NORMALS.slice();
-		this.MESH_COLOR = this.OBJECTS[0].COLOR.slice();
-		this.MESH_INDICIES = this.OBJECTS[0].INDICIES;
-		var currentMax = (this.OBJECTS[0].VERTICIES.length)/3;
-		for(var i = 1; i < this.OBJECTS.length; ++i) {
-			var tempFaces = this.OBJECTS[i].FACES.slice();
-			_3asyD.extend(this.MESH_FACES,tempFaces,currentMax);
-			_3asyD.extend(this.MESH_VERTICIES,this.OBJECTS[i].VERTICIES);
-			_3asyD.extend(this.MESH_NORMALS,this.OBJECTS[i].NORMALS);
-			_3asyD.extend(this.MESH_COLOR,this.OBJECTS[i].COLOR);
-			this.MESH_INDICIES+=this.OBJECTS[i].INDICIES;
-			currentMax += ((this.OBJECTS[i].VERTICIES.length)/3);
-		}
-		if(this.bufferSet == false) {
-			var GL = this.gl;
-			this.VERTEX_BUFFER = GL.createBuffer();
-			GL.bindBuffer(GL.ARRAY_BUFFER,this.VERTEX_BUFFER);
-			GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(this.MESH_VERTICIES),GL.STATIC_DRAW);
-			this.FACE_BUFFER = GL.createBuffer();
-			GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,this.FACE_BUFFER);
-			GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,new Uint16Array(this.MESH_FACES),GL.STATIC_DRAW);
-			this.NORMAL_BUFFER = GL.createBuffer();
-			GL.bindBuffer(GL.ARRAY_BUFFER,this.NORMAL_BUFFER);
-			GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_NORMALS),GL.STATIC_DRAW);
-			this.COLOR_BUFFER = GL.createBuffer();
-			GL.bindBuffer(GL.ARRAY_BUFFER,this.COLOR_BUFFER);
-			GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_COLOR),GL.STATIC_DRAW);
-			this.bufferSet = true;
-		}
-		this.READY = true;
+
+	this.MESH_VERTICIES = this.OBJECTS[0].VERTICIES.slice();
+	this.MESH_FACES = this.OBJECTS[0].FACES.slice();
+	this.MESH_NORMALS = this.OBJECTS[0].NORMALS.slice();
+	this.MESH_COLOR = this.OBJECTS[0].COLOR.slice();
+	this.MESH_INDICIES = this.OBJECTS[0].INDICIES;
+	var currentMax = (this.OBJECTS[0].VERTICIES.length)/3;
+	for(var i = 1; i < this.OBJECTS.length; ++i) {
+		var tempFaces = this.OBJECTS[i].FACES.slice();
+		_3asyD.extend(this.MESH_FACES,tempFaces,currentMax);
+		_3asyD.extend(this.MESH_VERTICIES,this.OBJECTS[i].VERTICIES);
+		_3asyD.extend(this.MESH_NORMALS,this.OBJECTS[i].NORMALS);
+		_3asyD.extend(this.MESH_COLOR,this.OBJECTS[i].COLOR);
+		this.MESH_INDICIES+=this.OBJECTS[i].INDICIES;
+		currentMax += ((this.OBJECTS[i].VERTICIES.length)/3);
 	}
-	catch(err) {
-		console.error(err);
-		return false;
+	if(this.bufferSet == false) {
+		var GL = this.gl;
+		this.VERTEX_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ARRAY_BUFFER,this.VERTEX_BUFFER);
+		GL.bufferData(GL.ARRAY_BUFFER,new Float32Array(this.MESH_VERTICIES),GL.STATIC_DRAW);
+		this.FACE_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER,this.FACE_BUFFER);
+		GL.bufferData(GL.ELEMENT_ARRAY_BUFFER,new Uint16Array(this.MESH_FACES),GL.STATIC_DRAW);
+		this.NORMAL_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ARRAY_BUFFER,this.NORMAL_BUFFER);
+		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_NORMALS),GL.STATIC_DRAW);
+		this.COLOR_BUFFER = GL.createBuffer();
+		GL.bindBuffer(GL.ARRAY_BUFFER,this.COLOR_BUFFER);
+		GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(this.MESH_COLOR),GL.STATIC_DRAW);
+		this.bufferSet = true;
+		
 	}
-	
 };
 
 _3asyD.Mesh.prototype.setDrawType = function(typeString) { 
@@ -725,6 +693,7 @@ _3asyD.Mesh.prototype.setDrawType = function(typeString) {
 
 
 _3asyD.Cube = function Cube(length,width,height,color_s) {
+	
 	_3asyD.Shape.call(this,'CUBE',color_s,36);
 	var l = length/2;
 	var w = width/2;
@@ -825,3 +794,76 @@ _3asyD.Cube.prototype.constructor = _3asyD.Cube;
 
 
 
+_3asyD.Sphere = function Sphere(radiusX,radiusY,radiusZ,smoothX,smoothY,color_s) {
+
+
+		_3asyD.Shape.call(this,'SPHERE',color_s,smoothX*smoothY*6);
+		// x = psinPHIcosTHETA, y = psinPHIsinTHETA z=pcosPHI
+		// p is a quick reference to the greek symbol rho,
+		// often used in the spherical coordinate system to denote 3 dimensional radii.
+		var pX = radiusX;
+		var pY = radiusY;
+		var pZ = radiusZ;
+		var sX = smoothX;
+		var sY = smoothY;
+		this.CHILDREN = [];
+		this.VERTICIES = [];
+		this.NORMALS = [];
+
+		
+		for(var i =  0; i <= PI; i+=(PI/sY)) {
+			for(j = 0; j <= 2*PI; j+=((2*PI)/sX)) {
+				var x = Math.sin(i)*Math.cos(j);
+				var y = Math.sin(i)*Math.sin(j);
+				var z = Math.cos(i);
+				this.NORMALS.push(x,y,z);
+				this.VERTICIES.push(pX*x,pY*y,pZ*z);
+			}
+		}
+		//console.log(this.VERTICIES.length)
+		this.FACES = [];
+		for(var i =  0; i < smoothY; ++i) {
+			for(j = 0; j < smoothX; ++j) {
+				var one = (i*(smoothX+1))+j;
+				var two = one+smoothX+1;
+				this.FACES.push(one,two,one+1);
+				this.FACES.push(two,two+1,one+1);
+			}
+		}
+
+
+	};
+_3asyD.Sphere.prototype = Object.create(_3asyD.Shape.prototype);
+_3asyD.Sphere.prototype.constructor = _3asyD.Sphere;
+
+
+
+
+_3asyD.Torus = function Torus(radiusX,radiusY,height,smoothX,smoothY,color_s) {
+
+
+		_3asyD.Shape.call(this,'TORUS',color_s,smoothX*smoothY*6);
+		// x = psinPHIcosTHETA, y = psinPHIsinTHETA z=pcosPHI
+		// p is a quick reference to the greek symbol rho,
+		// often used in the spherical coordinate system to denote 3 dimensional radii.
+		var c = radiusX;
+		var a = radiusY;
+		var sX = smoothX;
+		var sY = smoothY;
+		this.CHILDREN = [];
+		this.VERTICIES = [];
+		this.NORMALS = [];
+
+		for(var i = 0; i <= PI; i+=PI/smoothX) {
+			for(varj = 0; j <= PI; j+=PI/smoothY) {
+				var x = 0;
+				var y = 0;
+				var z = 0;
+			}
+		}
+
+	
+
+	};
+_3asyD.Torus.prototype = Object.create(_3asyD.Shape.prototype);
+_3asyD.Torus.prototype.constructor = _3asyD.Torus;
