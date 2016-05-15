@@ -512,6 +512,7 @@ _3asyD.Shape =  function (type,color_s,indicies) {
 		this.FACES = [];
 		this.COLOR = [];
 		this.setColor(color_s);
+		this.PARENT_MESH = null;
 		this.type = type;
 		this.DRAWTYPE = this.gl.TRIANGLES;
 		
@@ -610,10 +611,12 @@ _3asyD.Mesh = function(name, shaderType, objects) {
 _3asyD.Mesh.prototype = _3asyD;
 _3asyD.Mesh.prototype.constructor = _3asyD.Mesh;
 _3asyD.Mesh.prototype.addShape = function(object) {
+	object.PARENT_MESH = this.NAME;
 	if(typeof this.OBJECTS == 'undefined') { this.OBJECTS = [object]; 
 	}
 	else { this.OBJECTS.push(object) };
 };
+
 _3asyD.Mesh.prototype.setShader = function(shader) {
 	try {
 		this.SHADER = shader;

@@ -19,15 +19,15 @@
 		function getRandomInt(min, max) {
     		return Math.random() * (max - min) + min;
 		}
-		for(var i = 0; i < 100000; ++i) {
+		for(var i = 0; i < 1000; ++i) {
 			var x = getRandomInt(-30,30);
 			var y = getRandomInt(-30,30);
 			var z = getRandomInt(-5,5);
-			var cubeFun = new _3asyD.Cube(1,1,1);
+			var cubeFun = new _3asyD.Cube(1,1,1,["#345621"]);
 			cubeFun.move(x,y,z);
 			stage.MESHES[0].addShape(cubeFun);	
 		}
-		stage.MESHES[0].setDrawType("LINES");
+		stage.MESHES[0].setDrawType("TRIANGLES");
 		stage.MESHES[0].readyForDraw();
 		_3asyD.translateXYZ(stage.VMATRIX,0,0,10);
 	//-------------Draw
